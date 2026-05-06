@@ -19,8 +19,10 @@ from app.models import (  # noqa: F401
     ExportListing, ExportOrder, Shipment, ShipmentEvent,
     ExportDocument, GlobalBuyer, FreightQuote, ExportPriceIndex, EscrowTransaction,
 )
-from app.routers import ai, admin, auth, compliance, export_marketplace, farming, formulations, herbs, logistics, payments, research, users
+from app.routers import ai, admin, auth, compliance, customs, escrow, export_marketplace, farming, formulations, herbs, logistics, payments, price_intelligence, research, users
 from app.seeds.herbs import seed_herbs
+from app.seeds.price_index import seed_price_index
+from app.seeds.export_data import seed_export_data
 
 
 @asynccontextmanager
@@ -29,7 +31,9 @@ async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        seed_herbs(db)
+        seed_herbs(db)          # must run first — price index & listings FK to herbs
+        seed_price_index(db)    # 15 herbs × 3 regions × 28 months of price history
+        seed_export_data(db)    # 10 listings, 5 buyers, 3 shipments, extra price rows
     finally:
         db.close()
     yield
@@ -69,8 +73,12 @@ app.include_router(payments.router,     prefix="/api/payments",     tags=["payme
 app.include_router(research.router,     prefix="/api/research",     tags=["research"])
 app.include_router(compliance.router,   prefix="/api/compliance",   tags=["compliance"])
 app.include_router(admin.router,        prefix="/api/admin",        tags=["admin"])
-app.include_router(export_marketplace.router, prefix="/api/export",   tags=["export"])
-app.include_router(logistics.router,          prefix="/api/logistics", tags=["logistics"])
+app.include_router(export_marketplace.router,    prefix="/api/export",   tags=["export"])
+app.include_router(logistics.router,             prefix="/api/logistics", tags=["logistics"])
+app.include_router(customs.router,               prefix="/api/customs",   tags=["customs"])
+app.include_router(price_intelligence.router,    prefix="/api/prices",    tags=["prices"])
+app.include_router(escrow.router,               prefix="/api/escrow",    tags=["escrow"])
+app.include_router(escrow.webhook_router,       prefix="/api/webhooks",  tags=["webhooks"])
 
 
 @app.get("/api/health", tags=["health"])

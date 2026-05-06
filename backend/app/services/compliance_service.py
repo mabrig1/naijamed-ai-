@@ -471,3 +471,175 @@ def get_approval_checklist(product_type: str) -> list[dict[str, Any]]:
             "tips": item.get("tips", []),
         })
     return normalised
+
+
+# ---------------------------------------------------------------------------
+# CBN FX Repatriation Guide
+# ---------------------------------------------------------------------------
+
+def get_cbn_fx_requirements(export_value_usd: float) -> dict:
+    """
+    Return the Central Bank of Nigeria (CBN) Foreign Exchange Repatriation
+    requirements for herbal medicine / non-oil commodity exports.
+
+    Policy source: CBN Foreign Exchange Manual (Revised Edition 2018) and
+    subsequent CBN circulars on NXP Forms and export proceeds repatriation.
+
+    NOTE: This is a structured reference guide, not a real-time API call.
+    Replace with live CBN Trade & Exchange Department API when available.
+    """
+    # Penalty bands (% of unrepatriated amount, per CBN FX Manual §12.3)
+    if export_value_usd < 10_000:
+        penalty_band = "Caution letter + 10% of unremitted amount"
+    elif export_value_usd < 50_000:
+        penalty_band = "15% of unremitted amount + suspension from export list"
+    else:
+        penalty_band = "25% of unremitted amount + criminal prosecution under FEPA Cap F34"
+
+    # Form NXP processing fee (flat, CBN-approved)
+    nxp_fee_ngn = 5_000 if export_value_usd <= 100_000 else 10_000
+
+    return {
+        "title": "CBN Foreign Exchange Repatriation Requirements for Non-Oil Exports",
+        "policy_basis": [
+            "Foreign Exchange (Monitoring & Miscellaneous Provisions) Act Cap F34 LFN 2004",
+            "CBN Foreign Exchange Manual (Revised 2018), Chapter 12 — Export Proceeds",
+            "CBN Circular TED/FEM/FPC/GEN/01/010 (Form NXP Guidelines)",
+        ],
+
+        "repatriation_requirement": {
+            "percentage_required": 100,
+            "description": (
+                "100% of all export proceeds must be repatriated to Nigeria through "
+                "a CBN-licensed Authorised Dealer Bank (ADB) within 180 days of "
+                "the shipment departure date."
+            ),
+            "deadline_days": 180,
+            "currency_accepted": ["USD", "EUR", "GBP", "JPY", "CNY"],
+            "ngn_conversion": (
+                "Proceeds received in foreign currency are converted to NGN at the "
+                "Investors & Exporters (I&E) window rate on the date of receipt."
+            ),
+        },
+
+        "form_nxp": {
+            "full_name": "Nigeria Export Proceeds (NXP) Form",
+            "purpose": (
+                "Mandatory declaration form submitted BEFORE shipment. Links export "
+                "proceeds repatriation to a specific consignment and buyer."
+            ),
+            "where_to_obtain": "From your Authorised Dealer Bank (commercial bank)",
+            "processing_fee_ngn": nxp_fee_ngn,
+            "required_fields": [
+                "Exporter name and NEPC registration number",
+                "Commodity description and HS code",
+                "FOB value (USD equivalent)",
+                "Buyer name, address, and country",
+                "Port of exit (e.g., Apapa, Tin Can Island, Murtala Muhammed Airport)",
+                "Expected date of shipment",
+                "Authorised Dealer Bank name and SWIFT code",
+                "Shipping agent / freight forwarder details",
+            ],
+            "submission_steps": [
+                "1. Obtain Form NXP from your bank's trade finance desk",
+                "2. Complete all fields — ensure FOB value matches your commercial invoice",
+                "3. Attach: commercial invoice, packing list, NEPC certificate, NAFDAC cert",
+                "4. Submit to bank ≥ 3 working days before shipment",
+                "5. Bank issues NXP Reference Number — present at Customs (NCSW) for Form M/SAD",
+                "6. After shipment: provide Bill of Lading / Airway Bill to bank within 7 days",
+                "7. Bank monitors proceeds receipt within 180-day window",
+                "8. On receipt: bank issues 'Inflow Certificate' — retain for CBN audit",
+            ],
+        },
+
+        "authorised_dealer_banks": {
+            "description": (
+                "Only CBN-licensed Authorised Dealer Banks (ADBs) can process export "
+                "proceeds repatriation. All major commercial banks in Nigeria are ADBs."
+            ),
+            "examples": [
+                "Zenith Bank Plc — Trade Finance: +234 1 278 7000",
+                "United Bank for Africa (UBA) — Global Trade: +234 1 280 8822",
+                "First Bank of Nigeria — Export Finance: +234 1 905 0000",
+                "GTBank — International Trade: +234 1 448 0000",
+                "Access Bank — Export Services: +234 1 280 3900",
+                "Stanbic IBTC Bank — Trade Finance: +234 700 909 9090",
+            ],
+            "tip": (
+                "Choose a bank with a dedicated trade finance desk — they expedite "
+                "NXP processing and assist with SWIFT MT103 reconciliation."
+            ),
+        },
+
+        "repatriation_process": [
+            {
+                "step": 1,
+                "title": "Pre-Shipment: Open Export Domiciliary Account",
+                "detail": "Open a USD/EUR domiciliary account with your ADB to receive export proceeds.",
+                "timeline": "1–3 days",
+            },
+            {
+                "step": 2,
+                "title": "Pre-Shipment: File Form NXP",
+                "detail": "Submit Form NXP to ADB at least 3 days before goods leave Nigeria.",
+                "timeline": "1–2 days",
+            },
+            {
+                "step": 3,
+                "title": "Post-Shipment: Notify Buyer to Remit Payment",
+                "detail": (
+                    "Send buyer invoice with your domiciliary account details (IBAN/SWIFT). "
+                    "Payment terms: T/T (bank wire) or LC (Letter of Credit) strongly recommended."
+                ),
+                "timeline": "Per contract payment terms (e.g., 30/60 days)",
+            },
+            {
+                "step": 4,
+                "title": "Receipt of Proceeds",
+                "detail": (
+                    "Confirm receipt in your domiciliary account. Notify ADB with "
+                    "SWIFT credit advice for reconciliation against Form NXP."
+                ),
+                "timeline": "Within 180 days of shipment",
+            },
+            {
+                "step": 5,
+                "title": "Proceeds Utilisation / Conversion",
+                "detail": (
+                    "You may retain up to 100% in foreign currency or convert to NGN "
+                    "at the prevailing I&E window rate (CBN Circular FEM/FPC/2023/001)."
+                ),
+                "timeline": "No mandatory conversion timeline (as of 2024 policy)",
+            },
+        ],
+
+        "non_compliance_penalties": {
+            "estimated_export_value_usd": round(export_value_usd, 2),
+            "applicable_penalty": penalty_band,
+            "additional_consequences": [
+                "Suspension from the NEPC Exporters Registry",
+                "Blacklisting by CBN — loss of access to official FX window",
+                "Bank account freeze pending investigation",
+                "Criminal prosecution under FEPA (up to 5 years imprisonment or fine)",
+            ],
+            "grace_period": "30-day extension available on written application to CBN Trade Dept.",
+        },
+
+        "practical_tips": [
+            "Always use Letters of Credit (LC) for first-time international buyers — protects you legally.",
+            "Maintain a dedicated export domiciliary account separate from operational accounts.",
+            "Keep all shipping documents for 5 years — CBN audits can go back this far.",
+            "Use a licensed Customs House Agent (CHA) to ensure NXP number is correctly entered on SAD.",
+            "The I&E window rate fluctuates — consider forward contracts with your ADB for rate certainty.",
+            "For EU buyers, SEPA transfers may arrive faster than SWIFT — confirm with your ADB.",
+        ],
+
+        "contact": {
+            "cbn_trade_department": "Trade & Exchange Department, CBN HQ, Abuja — +234 9 462 3400",
+            "cbn_website": "https://www.cbn.gov.ng/forex/",
+            "cbn_fx_manual_pdf": "https://www.cbn.gov.ng/Out/2018/TED/CBN%20Foreign%20Exchange%20Manual%20Revised%20Edition.pdf",
+        },
+
+        "source": "CBN FX Manual 2018 + CBN Circulars 2023/2024 — https://www.cbn.gov.ng",
+        "disclaimer": _DISCLAIMER,
+    }
