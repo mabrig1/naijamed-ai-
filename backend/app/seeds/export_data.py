@@ -67,8 +67,8 @@ def _seed_seed_users(db) -> None:
         db.add(User(
             email=email,
             full_name=name,
-            hashed_password=hashed_pw,
-            role=UserRole.user,
+            password_hash=hashed_pw,
+            role=UserRole.farmer,
             is_active=True,
         ))
 
@@ -77,8 +77,8 @@ def _seed_seed_users(db) -> None:
         db.add(User(
             email=email,
             full_name=name,
-            hashed_password=hashed_pw,
-            role=UserRole.user,
+            password_hash=hashed_pw,
+            role=UserRole.researcher,
             is_active=True,
         ))
 
