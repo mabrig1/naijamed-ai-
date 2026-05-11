@@ -31,7 +31,6 @@ from app.models.herb_compound import HerbCompound
 from app.models.patient_outcome import PatientOutcome
 from app.models.shipment import Shipment
 from app.models.user import User, UserRole
-from app.schemas.user import UserRead
 
 router = APIRouter()
 
