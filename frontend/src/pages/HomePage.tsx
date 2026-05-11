@@ -18,7 +18,7 @@ export default function HomePage() {
           From Soil to Science<br />to Pharmacy
         </h1>
         <p className="text-brand-100 text-lg max-w-2xl mx-auto mb-8">
-          NaijaMed AI connects centuries of Nigerian herbal wisdom with modern pharmaceutical
+          NigerFlora BioSciences connects centuries of Nigerian herbal wisdom with modern pharmaceutical
           production through the power of artificial intelligence.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">

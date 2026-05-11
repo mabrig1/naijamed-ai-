@@ -76,7 +76,7 @@ function ExportHubDropdown() {
           {/* Header */}
           <div className="px-4 py-2 bg-gradient-to-r from-forest-700 to-forest-500 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-sm">NaijaMed Export Hub</span>
+              <span className="text-white font-bold text-sm">NigerFlora Export Hub</span>
               <NAFDACBadgeMini />
             </div>
             <p className="text-forest-200 text-xs">From Nigerian farms to global markets</p>
@@ -215,7 +215,7 @@ export default function Layout() {
             <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0">
               <span className="text-2xl">🌿</span>
               <div className="leading-tight">
-                <div className="font-bold text-lg text-gold-300 tracking-wide">NaijaMed AI</div>
+                <div className="font-bold text-lg text-gold-300 tracking-wide">NigerFlora BioSciences</div>
                 <div className="text-xs text-forest-200 hidden sm:block">From Soil to Science</div>
               </div>
             </Link>
@@ -361,7 +361,7 @@ export default function Layout() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-2xl">🌿</span>
-                <span className="font-bold text-gold-300 text-lg">NaijaMed AI</span>
+                <span className="font-bold text-gold-300 text-lg">NigerFlora BioSciences</span>
               </div>
               <p className="text-sm text-forest-300 leading-relaxed">
                 Bridging Nigerian herbal knowledge and pharmaceutical science.
@@ -411,7 +411,7 @@ export default function Layout() {
             </div>
           </div>
           <div className="border-t border-forest-700 mt-6 pt-4 text-center text-xs text-forest-400">
-            © {new Date().getFullYear()} NaijaMed AI · Empowering Nigerian Herbal Medicine Exports
+            © {new Date().getFullYear()} NigerFlora BioSciences · Empowering Nigerian Herbal Medicine Exports
           </div>
         </div>
       </footer>

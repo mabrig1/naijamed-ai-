@@ -8,7 +8,7 @@ export default function Home() {
       <main className="mx-auto max-w-4xl px-6 py-20 text-center">
         <span className="text-6xl">🌿</span>
         <h1 className="mt-6 text-5xl font-bold tracking-tight text-gray-900">
-          NaijaMed AI
+          NigerFlora BioSciences
         </h1>
         <p className="mt-4 text-xl text-gray-500">
           From soil to science to pharmacy.

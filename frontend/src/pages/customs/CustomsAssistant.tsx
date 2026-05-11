@@ -139,7 +139,7 @@ export default function CustomsAssistant() {
   const [messages, setMessages] = useState<CustomsChatMessage[]>([
     {
       role: "assistant",
-      content: "👋 Hello! I'm your NaijaMed Customs AI. I can help you with HS codes, country import requirements, NEPC/NAFDAC registration, Form-M procedures, forex repatriation, and more.\n\nWhat do you need help with today?",
+      content: "👋 Hello! I'm your NigerFlora Customs AI. I can help you with HS codes, country import requirements, NEPC/NAFDAC registration, Form-M procedures, forex repatriation, and more.\n\nWhat do you need help with today?",
       suggested_questions: [
         "What is the HS code for Moringa?",
         "How do I register with NEPC?",

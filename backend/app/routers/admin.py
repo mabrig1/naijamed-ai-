@@ -418,7 +418,7 @@ def get_top_markets(
     response_model=List[RevenueRow],
     summary="Monthly export revenue and platform commission",
     description=(
-        "Returns month-by-month gross export value and NaijaMed platform commission "
+        "Returns month-by-month gross export value and NigerFlora platform commission "
         "(2.5% of released escrow). Covers the last N months."
     ),
 )

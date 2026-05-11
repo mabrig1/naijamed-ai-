@@ -1,5 +1,5 @@
 """
-Paystack payment integration for NaijaMed AI marketplace.
+Paystack payment integration for NigerFlora BioSciences marketplace.
 
 Uses httpx (sync) to call the Paystack REST API.
 All amounts are in kobo (100 kobo = ₦1).
@@ -134,7 +134,7 @@ def initiate_payment(
         "currency": "NGN",
         "metadata": {
             **(body.metadata or {}),
-            "naijamed_user_id": current_user.id,
+            "nigerflora_user_id": current_user.id,
             "listing_id": body.listing_id,
         },
     }
@@ -205,8 +205,8 @@ def initiate_subscription(
         "plan": body.plan_code,
         "metadata": {
             **(body.metadata or {}),
-            "naijamed_user_id": current_user.id,
-            "naijamed_user_role": current_user.role.value,
+            "nigerflora_user_id": current_user.id,
+            "nigerflora_user_role": current_user.role.value,
         },
     }
     if body.callback_url:

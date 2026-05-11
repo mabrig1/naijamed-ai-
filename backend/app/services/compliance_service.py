@@ -1,5 +1,5 @@
 """
-NAFDAC Compliance Intelligence — Claude-powered regulatory assistant for NaijaMed AI.
+NAFDAC Compliance Intelligence — Claude-powered regulatory assistant for NigerFlora BioSciences.
 
 Synchronous functions; FastAPI runs them in its thread pool.
 """
@@ -136,7 +136,7 @@ Rules:
 """
 
 _CHAT_PROMPT = """
-You are NaijaMed AI's NAFDAC regulatory compliance assistant — an expert in Nigerian pharmaceutical and herbal medicine regulation with deep knowledge of NAFDAC guidelines, SON standards, and West African regulatory harmonisation.
+You are NigerFlora BioSciences's NAFDAC regulatory compliance assistant — an expert in Nigerian pharmaceutical and herbal medicine regulation with deep knowledge of NAFDAC guidelines, SON standards, and West African regulatory harmonisation.
 
 User context:
 {context_block}

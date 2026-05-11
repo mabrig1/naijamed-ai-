@@ -453,7 +453,7 @@ def initiate_hold(
 
     amount_usd = float(order.agreed_price_usd * order.quantity_kg)
     buyer = order.buyer
-    buyer_email = body.buyer_email or (buyer.email if buyer else "buyer@naijamed.ai")
+    buyer_email = body.buyer_email or (buyer.email if buyer else "buyer@nigerflora.mabrigkorie.org")
     buyer_name = buyer.full_name if buyer else "Buyer"
 
     now = datetime.now(timezone.utc)
@@ -706,7 +706,7 @@ def raise_dispute(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     "The 48-hour dispute window has closed. "
-                    "Contact support at disputes@naijamed.ai for late claims."
+                    "Contact support at disputes@nigerflora.mabrigkorie.org for late claims."
                 ),
             )
 
@@ -779,7 +779,7 @@ def raise_dispute(
         message=(
             f"Dispute raised for Order #{order_id}. "
             "An AI analysis has been generated for admin review. "
-            "A NaijaMed admin will contact you within 24 hours."
+            "A NigerFlora admin will contact you within 24 hours."
         ),
     )
 
@@ -925,7 +925,7 @@ async def stripe_webhook(
     elif event_type == "payment_intent.succeeded":
         pi_data = event.get("data", {}).get("object", {})
         pi_id = pi_data.get("id", "")
-        order_id_str = (pi_data.get("metadata") or {}).get("naijamed_order_id")
+        order_id_str = (pi_data.get("metadata") or {}).get("nigerflora_order_id")
         if pi_id and order_id_str:
             escrow = (
                 db.query(EscrowTransaction)

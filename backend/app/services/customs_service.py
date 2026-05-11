@@ -1496,7 +1496,7 @@ Return ONLY a valid JSON object (no markdown, no explanation):
 """
 
 _CHAT_PROMPT = """
-You are NaijaMed AI's Nigerian export customs expert — a seasoned specialist with 20+ years
+You are NigerFlora BioSciences's Nigerian export customs expert — a seasoned specialist with 20+ years
 of experience in Nigerian export procedures, international trade law, and herbal product trade.
 
 You have deep, practical knowledge of:
@@ -1606,7 +1606,7 @@ def get_hs_code(herb_name: str, form: str) -> dict[str, Any]:
             ) else seed["hs_code"],
             "hs_chapter": seed["hs_chapter"],
             "description": seed["description"],
-            "classification_notes": f"Matched from NaijaMed AI HS Code seed table. Form: {form}.",
+            "classification_notes": f"Matched from NigerFlora BioSciences HS Code seed table. Form: {form}.",
             "duty_rate_eu_percent": seed.get("duty_rate_eu_percent", 0),
             "duty_rate_us_percent": seed.get("duty_rate_us_percent", 0),
             "duty_rate_china_percent": seed.get("duty_rate_china_percent", 5),

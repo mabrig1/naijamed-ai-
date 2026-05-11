@@ -323,7 +323,7 @@ export default function ExportMarketplace() {
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-3xl">🌿</span>
-              <span className="text-gold-300 font-bold text-sm uppercase tracking-widest">NaijaMed Export Hub</span>
+              <span className="text-gold-300 font-bold text-sm uppercase tracking-widest">NigerFlora Export Hub</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold mb-2">
               Nigerian Herb Export Marketplace

@@ -19,7 +19,7 @@ export default function RegisterPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="card w-full max-w-md">
         <h1 className="text-2xl font-bold text-brand-800 mb-1">Create your account</h1>
-        <p className="text-gray-500 text-sm mb-6">Join the NaijaMed AI community</p>
+        <p className="text-gray-500 text-sm mb-6">Join the NigerFlora BioSciences community</p>
         <form onSubmit={(e: FormEvent) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
           <div>
             <label className="label" htmlFor="full_name">Full Name</label>

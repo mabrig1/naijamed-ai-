@@ -32,7 +32,7 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🌿</div>
-          <h1 className="text-3xl font-bold text-white">NaijaMed AI</h1>
+          <h1 className="text-3xl font-bold text-white">NigerFlora BioSciences</h1>
           <p className="text-forest-200 mt-1">From Soil to Science to Pharmacy</p>
         </div>
 

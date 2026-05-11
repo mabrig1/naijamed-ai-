@@ -1,5 +1,5 @@
 """
-Notification Service — NaijaMed AI
+Notification Service — NigerFlora BioSciences
 Email (SMTP / SendGrid) + SMS (Termii API) notifications for the Export Engine.
 
 NOTE: Real credentials must be set in .env before notifications are delivered.
@@ -53,8 +53,8 @@ class SMSResult:
 # ---------------------------------------------------------------------------
 
 _SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
-_FROM_EMAIL = "noreply@naijamed.ai"
-_FROM_NAME  = "NaijaMed AI"
+_FROM_EMAIL = "noreply@nigerflora.mabrigkorie.org"
+_FROM_NAME  = "NigerFlora BioSciences"
 
 
 def _send_via_sendgrid(to_email: str, subject: str, html_body: str, plain_body: str) -> EmailResult:
@@ -157,7 +157,7 @@ def send_email(to_email: str, subject: str, html_body: str, plain_body: str = ""
 
 _TERMII_BASE_URL = "https://api.ng.termii.com/api"
 
-def send_sms(phone: str, message: str, sender_id: str = "NaijaMed") -> SMSResult:
+def send_sms(phone: str, message: str, sender_id: str = "NigerFlora") -> SMSResult:
     """
     Send an SMS via Termii API.
 
@@ -210,7 +210,7 @@ def notify_new_trade_inquiry(
     inquiry_id: int,
 ) -> dict[str, Any]:
     """Notify seller of a new trade inquiry from a global buyer."""
-    subject = f"[NaijaMed] New Inquiry for {herb_name} — {quantity_kg} kg"
+    subject = f"[NigerFlora] New Inquiry for {herb_name} — {quantity_kg} kg"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#1a5c38">📬 New Trade Inquiry</h2>
@@ -223,13 +223,13 @@ def notify_new_trade_inquiry(
         <tr style="background:#f5f5f5"><td style="padding:6px;color:#555">Inquiry ID</td><td style="padding:6px">#{inquiry_id}</td></tr>
       </table>
       <p style="margin-top:20px">
-        <a href="https://naijamed.ai/export/inquiries/{inquiry_id}"
+        <a href="https://nigerflora.mabrigkorie.org/export/inquiries/{inquiry_id}"
            style="background:#1a5c38;color:white;padding:10px 20px;text-decoration:none;border-radius:4px">
           View Inquiry →
         </a>
       </p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria</p>
     </div>
     """
     plain = f"New trade inquiry #{inquiry_id} for {herb_name} ({quantity_kg} kg) from {buyer_name}. Log in to respond."
@@ -237,7 +237,7 @@ def notify_new_trade_inquiry(
 
     sms_result = None
     if seller_phone:
-        sms_msg = f"NaijaMed: New inquiry for {herb_name} ({quantity_kg}kg) from {buyer_name}. Ref #{inquiry_id}. naijamed.ai"
+        sms_msg = f"NigerFlora: New inquiry for {herb_name} ({quantity_kg}kg) from {buyer_name}. Ref #{inquiry_id}. nigerflora.mabrigkorie.org"
         sms_result = send_sms(seller_phone, sms_msg)
 
     return {"email": email_result.__dict__, "sms": sms_result.__dict__ if sms_result else None}
@@ -254,7 +254,7 @@ def notify_order_confirmed(
     escrow_id: str,
 ) -> dict[str, Any]:
     """Notify buyer that order is confirmed and escrow is active."""
-    subject = f"[NaijaMed] Order Confirmed — {herb_name} #{order_id}"
+    subject = f"[NigerFlora] Order Confirmed — {herb_name} #{order_id}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#1a5c38">✅ Order Confirmed</h2>
@@ -269,7 +269,7 @@ def notify_order_confirmed(
       </table>
       <p style="margin-top:20px">Funds will be released to the seller upon your delivery confirmation.</p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria</p>
     </div>
     """
     plain = f"Order #{order_id} confirmed. {herb_name} ({quantity_kg} kg) — ${total_usd:.2f}. Escrow: {escrow_id}"
@@ -277,7 +277,7 @@ def notify_order_confirmed(
 
     sms_result = None
     if buyer_phone:
-        sms_msg = f"NaijaMed: Order #{order_id} confirmed. {herb_name} {quantity_kg}kg escrow active. naijamed.ai"
+        sms_msg = f"NigerFlora: Order #{order_id} confirmed. {herb_name} {quantity_kg}kg escrow active. nigerflora.mabrigkorie.org"
         sms_result = send_sms(buyer_phone, sms_msg)
 
     return {"email": email_result.__dict__, "sms": sms_result.__dict__ if sms_result else None}
@@ -294,7 +294,7 @@ def notify_shipment_departed(
     order_id: int,
 ) -> dict[str, Any]:
     """Notify buyer that shipment has departed Nigeria."""
-    subject = f"[NaijaMed] Shipment Departed — Order #{order_id}"
+    subject = f"[NigerFlora] Shipment Departed — Order #{order_id}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#1a5c38">🚢 Shipment Departed</h2>
@@ -307,13 +307,13 @@ def notify_shipment_departed(
         <tr style="background:#f5f5f5"><td style="padding:6px;color:#555">Order ID</td><td style="padding:6px">#{order_id}</td></tr>
       </table>
       <p style="margin-top:20px">
-        <a href="https://naijamed.ai/logistics/tracker?tracking={tracking_number}"
+        <a href="https://nigerflora.mabrigkorie.org/logistics/tracker?tracking={tracking_number}"
            style="background:#1a5c38;color:white;padding:10px 20px;text-decoration:none;border-radius:4px">
           Track Shipment →
         </a>
       </p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria</p>
     </div>
     """
     plain = f"Shipment for Order #{order_id} departed. Tracking: {tracking_number} via {carrier}. ETA: {estimated_arrival}"
@@ -321,7 +321,7 @@ def notify_shipment_departed(
 
     sms_result = None
     if buyer_phone:
-        sms_msg = f"NaijaMed: Order #{order_id} shipped! Track: {tracking_number} ({carrier}). ETA {estimated_arrival}"
+        sms_msg = f"NigerFlora: Order #{order_id} shipped! Track: {tracking_number} ({carrier}). ETA {estimated_arrival}"
         sms_result = send_sms(buyer_phone, sms_msg)
 
     return {"email": email_result.__dict__, "sms": sms_result.__dict__ if sms_result else None}
@@ -336,7 +336,7 @@ def notify_customs_cleared(
     clearance_country: str,
 ) -> dict[str, Any]:
     """Notify buyer that customs clearance has been completed."""
-    subject = f"[NaijaMed] Customs Cleared — Order #{order_id}"
+    subject = f"[NigerFlora] Customs Cleared — Order #{order_id}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#1a5c38">✅ Customs Cleared</h2>
@@ -344,13 +344,13 @@ def notify_customs_cleared(
       <p>Your shipment of <strong>{herb_name}</strong> (Order #{order_id}) has cleared
       customs in <strong>{clearance_country}</strong>. Delivery is expected soon.</p>
       <p>
-        <a href="https://naijamed.ai/logistics/tracker"
+        <a href="https://nigerflora.mabrigkorie.org/logistics/tracker"
            style="background:#1a5c38;color:white;padding:10px 20px;text-decoration:none;border-radius:4px">
           View Shipment →
         </a>
       </p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria</p>
     </div>
     """
     plain = f"Order #{order_id}: customs cleared in {clearance_country}. Delivery expected soon."
@@ -358,7 +358,7 @@ def notify_customs_cleared(
 
     sms_result = None
     if buyer_phone:
-        sms_msg = f"NaijaMed: Order #{order_id} customs cleared in {clearance_country}. Delivery expected soon."
+        sms_msg = f"NigerFlora: Order #{order_id} customs cleared in {clearance_country}. Delivery expected soon."
         sms_result = send_sms(buyer_phone, sms_msg)
 
     return {"email": email_result.__dict__, "sms": sms_result.__dict__ if sms_result else None}
@@ -373,7 +373,7 @@ def notify_funds_released(
     order_id: int,
 ) -> dict[str, Any]:
     """Notify seller that escrow funds have been released."""
-    subject = f"[NaijaMed] 💰 Funds Released — Order #{order_id}"
+    subject = f"[NigerFlora] 💰 Funds Released — Order #{order_id}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#1a5c38">💰 Funds Released</h2>
@@ -389,7 +389,7 @@ def notify_funds_released(
         Funds will reflect in your bank account within 1–3 business days depending on your payment provider.
       </p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria</p>
     </div>
     """
     plain = f"Escrow funds released for Order #{order_id}: ${amount_usd:,.2f} USD for {herb_name}."
@@ -397,7 +397,7 @@ def notify_funds_released(
 
     sms_result = None
     if seller_phone:
-        sms_msg = f"NaijaMed: ${amount_usd:,.2f} released for Order #{order_id} ({herb_name}). Check your account. naijamed.ai"
+        sms_msg = f"NigerFlora: ${amount_usd:,.2f} released for Order #{order_id} ({herb_name}). Check your account. nigerflora.mabrigkorie.org"
         sms_result = send_sms(seller_phone, sms_msg)
 
     return {"email": email_result.__dict__, "sms": sms_result.__dict__ if sms_result else None}
@@ -414,7 +414,7 @@ def notify_temperature_breach(
     tracking_number: str,
 ) -> dict[str, Any]:
     """Alert buyer (and potentially seller) of a cold-chain temperature breach."""
-    subject = f"[NaijaMed] ⚠️ Temperature Alert — Shipment #{shipment_id}"
+    subject = f"[NigerFlora] ⚠️ Temperature Alert — Shipment #{shipment_id}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#c0392b">⚠️ Temperature Breach Alert</h2>
@@ -431,7 +431,7 @@ def notify_temperature_breach(
       </table>
       <p style="margin-top:16px">Please contact our logistics team immediately if you wish to raise a dispute.</p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria</p>
     </div>
     """
     plain = (
@@ -443,7 +443,7 @@ def notify_temperature_breach(
     sms_result = None
     if buyer_phone:
         sms_msg = (
-            f"NaijaMed ALERT: Shipment #{shipment_id} temp breach {current_temp_c:.1f}C "
+            f"NigerFlora ALERT: Shipment #{shipment_id} temp breach {current_temp_c:.1f}C "
             f"(max {threshold_c:.1f}C). Track: {tracking_number}"
         )
         sms_result = send_sms(buyer_phone, sms_msg)
@@ -464,7 +464,7 @@ def notify_price_alert(
     """Alert user when herb price crosses their configured threshold."""
     direction_text = "risen above" if direction == "above" else "fallen below"
     icon = "📈" if direction == "above" else "📉"
-    subject = f"[NaijaMed] {icon} Price Alert — {herb_name} in {region.title()}"
+    subject = f"[NigerFlora] {icon} Price Alert — {herb_name} in {region.title()}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px">
       <h2 style="color:#1a5c38">{icon} Price Alert: {herb_name}</h2>
@@ -479,13 +479,13 @@ def notify_price_alert(
         <tr><td style="padding:6px;color:#555">Market Region</td><td style="padding:6px">{region.title()}</td></tr>
       </table>
       <p style="margin-top:20px">
-        <a href="https://naijamed.ai/prices"
+        <a href="https://nigerflora.mabrigkorie.org/prices"
            style="background:#1a5c38;color:white;padding:10px 20px;text-decoration:none;border-radius:4px">
           View Price Intelligence →
         </a>
       </p>
       <hr style="margin-top:30px;border:none;border-top:1px solid #eee"/>
-      <p style="font-size:12px;color:#999">NaijaMed AI · Abuja, Nigeria · Unsubscribe from price alerts in your account settings.</p>
+      <p style="font-size:12px;color:#999">NigerFlora BioSciences · Abuja, Nigeria · Unsubscribe from price alerts in your account settings.</p>
     </div>
     """
     plain = (
@@ -497,8 +497,8 @@ def notify_price_alert(
     sms_result = None
     if user_phone:
         sms_msg = (
-            f"NaijaMed {icon}: {herb_name} now ${current_price_usd:.2f}/kg "
-            f"({direction_text} ${threshold_usd:.2f} in {region}). naijamed.ai/prices"
+            f"NigerFlora {icon}: {herb_name} now ${current_price_usd:.2f}/kg "
+            f"({direction_text} ${threshold_usd:.2f} in {region}). nigerflora.mabrigkorie.org/prices"
         )
         sms_result = send_sms(user_phone, sms_msg)
 

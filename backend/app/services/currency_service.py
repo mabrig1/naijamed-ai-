@@ -1,5 +1,5 @@
 """
-Currency Conversion Service — NaijaMed AI
+Currency Conversion Service — NigerFlora BioSciences
 
 Provides USD ↔ NGN (and other currencies) conversion for export listing prices.
 

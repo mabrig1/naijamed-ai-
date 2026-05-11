@@ -220,7 +220,7 @@ export default function Dashboard() {
               {user.role === "farmer"         && "Manage your herb listings and track market demand."}
               {user.role === "researcher"     && "Submit trials, analyse evidence, and generate formulations."}
               {user.role === "pharma_company" && "Discover herbs, generate formulations, and file NAFDAC docs."}
-              {user.role === "admin"          && "Oversee the full NaijaMed AI ecosystem."}
+              {user.role === "admin"          && "Oversee the full NigerFlora BioSciences ecosystem."}
             </p>
           </div>
           <div className="bg-forest-700/50 px-4 py-2 rounded-lg text-sm text-gold-300 font-medium">

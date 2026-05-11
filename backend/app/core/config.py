@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    APP_NAME: str = "NaijaMed AI"
+    APP_NAME: str = "NigerFlora BioSciences"
     APP_ENV: str = "development"
 
     SECRET_KEY: str = "dev-secret-key-change-in-production"
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     EXCHANGERATE_API_KEY: str = ""
 
     # Frontend origin(s) — used in CORS allow list.
-    # FRONTEND_URL: primary production URL (e.g. https://naijamed.vercel.app)
+    # FRONTEND_URL: primary production URL (e.g. https://nigerflora.mabrigkorie.org)
     # EXTRA_CORS_ORIGINS: comma-separated additional origins (e.g. Vercel preview URLs)
     FRONTEND_URL: str = "http://localhost:5173"
     EXTRA_CORS_ORIGINS: str = ""
