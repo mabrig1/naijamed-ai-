@@ -52,8 +52,11 @@ class Settings(BaseSettings):
     # ── Currency conversion — exchangerate-api.com ───────────────────────────
     EXCHANGERATE_API_KEY: str = ""
 
-    # Frontend origin — used in CORS allow list
+    # Frontend origin(s) — used in CORS allow list.
+    # FRONTEND_URL: primary production URL (e.g. https://naijamed.vercel.app)
+    # EXTRA_CORS_ORIGINS: comma-separated additional origins (e.g. Vercel preview URLs)
     FRONTEND_URL: str = "http://localhost:5173"
+    EXTRA_CORS_ORIGINS: str = ""
 
     # Rate limiting
     AI_RATE_LIMIT: str = "10/minute"
@@ -71,6 +74,10 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5173",
             self.FRONTEND_URL,
         }
+        for origin in self.EXTRA_CORS_ORIGINS.split(","):
+            origin = origin.strip()
+            if origin:
+                origins.add(origin)
         return list(origins)
 
 
