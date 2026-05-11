@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMyBuyerProfile, useCreateOrUpdateBuyerProfile } from "../../hooks/useExport";
 import { useHerbList } from "../../hooks/useHerbs";
-import { Spinner, PageError } from "../../components/Layout";
+import { Spinner } from "../../components/Layout";
 import { Link } from "react-router-dom";
 
 const COUNTRIES = [
@@ -15,7 +15,7 @@ const CERTS_REQUIRED = ["NAFDAC","NEPC","NAQS","ISO 22000","Organic","Fair Trade
 const VOLUME_RANGES = ["< 100 kg/mo","100–500 kg/mo","500–1,000 kg/mo","1,000–5,000 kg/mo","> 5,000 kg/mo"];
 
 export default function GlobalBuyerProfile() {
-  const { data: profile, isLoading, isError } = useMyBuyerProfile();
+  const { data: profile, isLoading } = useMyBuyerProfile();
   const { data: herbs } = useHerbList({ limit: 100 });
   const saveMut = useCreateOrUpdateBuyerProfile();
 

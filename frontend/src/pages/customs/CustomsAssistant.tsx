@@ -178,10 +178,6 @@ export default function CustomsAssistant() {
     }
   }
 
-  function handleSuggestedQuestion(q: string) {
-    sendMessage(q);
-  }
-
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       {/* Header */}
