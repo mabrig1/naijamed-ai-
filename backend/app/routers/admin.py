@@ -20,7 +20,7 @@ from app.models.clinical_trial import ClinicalTrial
 from app.models.compliance_document import ComplianceDocument
 from app.models.drug_formulation import DrugFormulation
 from app.models.escrow_transaction import EscrowTransaction
-from app.models.export_enums import EscrowStatus, OrderStatus, ShipmentStatus
+from app.models.export_enums import EscrowStatus, OrderStatus
 from app.models.export_listing import ExportListing
 from app.models.export_order import ExportOrder
 from app.models.export_price_index import ExportPriceIndex
