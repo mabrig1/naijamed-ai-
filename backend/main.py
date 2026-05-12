@@ -40,7 +40,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="NaijaMed AI API",
+    title="NigerFlora BioSciences API",
     description="AI-powered Nigerian herbal medicine platform — from soil to science to pharmacy.",
     version="1.0.0",
     docs_url="/docs",

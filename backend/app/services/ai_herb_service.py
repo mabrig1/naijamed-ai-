@@ -1,5 +1,5 @@
 """
-Herbal Intelligence Engine — Gemini-powered analysis for NaijaMed AI.
+Herbal Intelligence Engine — Gemini-powered analysis for NigerFlora BioSciences.
 
 All functions are synchronous so FastAPI can run them in its thread-pool
 without blocking the event loop (declare routes as `def`, not `async def`).

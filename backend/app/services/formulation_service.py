@@ -1,5 +1,5 @@
 """
-AI Drug Formulation Lab — Claude-powered formulation generation for NaijaMed AI.
+AI Drug Formulation Lab — Claude-powered formulation generation for NigerFlora BioSciences.
 
 All functions are synchronous; FastAPI runs them in its thread pool.
 """

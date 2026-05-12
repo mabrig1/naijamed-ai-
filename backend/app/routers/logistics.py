@@ -608,7 +608,7 @@ def ai_generate_document(
     doc = ExportDocument(
         order_id=body.order_id,
         doc_type=body.doc_type,
-        issued_by="NaijaMed AI (AI Generated)",
+        issued_by="NigerFlora BioSciences (AI Generated)",
         issue_date=date.today(),
         is_ai_generated=True,
         is_verified=False,

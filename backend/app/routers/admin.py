@@ -20,7 +20,7 @@ from app.models.clinical_trial import ClinicalTrial
 from app.models.compliance_document import ComplianceDocument
 from app.models.drug_formulation import DrugFormulation
 from app.models.escrow_transaction import EscrowTransaction
-from app.models.export_enums import EscrowStatus, OrderStatus, ShipmentStatus
+from app.models.export_enums import EscrowStatus, OrderStatus
 from app.models.export_listing import ExportListing
 from app.models.export_order import ExportOrder
 from app.models.export_price_index import ExportPriceIndex
@@ -31,7 +31,6 @@ from app.models.herb_compound import HerbCompound
 from app.models.patient_outcome import PatientOutcome
 from app.models.shipment import Shipment
 from app.models.user import User, UserRole
-from app.schemas.user import UserRead
 
 router = APIRouter()
 
@@ -418,7 +417,7 @@ def get_top_markets(
     response_model=List[RevenueRow],
     summary="Monthly export revenue and platform commission",
     description=(
-        "Returns month-by-month gross export value and NaijaMed platform commission "
+        "Returns month-by-month gross export value and NigerFlora platform commission "
         "(2.5% of released escrow). Covers the last N months."
     ),
 )

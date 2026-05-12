@@ -475,7 +475,7 @@ def submit_price(
         message=(
             f"Price submitted successfully for {herb.name_english} in "
             f"{entry.market_region.value}. Thank you for contributing to the "
-            "NaijaMed price index!"
+            "NigerFlora price index!"
         ),
     )
 

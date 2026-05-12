@@ -23,7 +23,7 @@ export default function Landing() {
         <div className="flex items-center gap-2.5">
           <span className="text-2xl">🌿</span>
           <div>
-            <div className="font-bold text-lg text-gold-300">NaijaMed AI</div>
+            <div className="font-bold text-lg text-gold-300">NigerFlora BioSciences</div>
             <div className="text-xs text-forest-200 hidden sm:block">From Soil to Science to Pharmacy</div>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function Landing() {
           Ready to Transform Nigerian Herbal Medicine?
         </h2>
         <p className="text-gray-500 mb-8 max-w-xl mx-auto">
-          Join farmers, researchers, and pharma companies already using NaijaMed AI to accelerate drug discovery.
+          Join farmers, researchers, and pharma companies already using NigerFlora BioSciences to accelerate drug discovery.
         </p>
         <Link to="/register" className="btn-primary text-base px-10 py-3">
           Create Free Account →
@@ -148,9 +148,9 @@ export default function Landing() {
       <footer className="bg-forest-800 text-forest-300 py-8 text-center text-sm">
         <div className="flex items-center justify-center gap-2 mb-2">
           <span className="text-xl">🌿</span>
-          <span className="text-gold-300 font-semibold">NaijaMed AI</span>
+          <span className="text-gold-300 font-semibold">NigerFlora BioSciences</span>
         </div>
-        <p>© {new Date().getFullYear()} NaijaMed AI · Empowering Nigerian Herbal Medicine</p>
+        <p>© {new Date().getFullYear()} NigerFlora BioSciences · Empowering Nigerian Herbal Medicine</p>
         <p className="text-forest-500 text-xs mt-2">AI guidance is informational only — always consult a certified NAFDAC regulatory consultant.</p>
       </footer>
     </div>

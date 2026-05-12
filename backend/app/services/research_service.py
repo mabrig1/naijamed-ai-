@@ -1,5 +1,5 @@
 """
-Clinical Research Intelligence — Claude-powered trial analysis for NaijaMed AI.
+Clinical Research Intelligence — Claude-powered trial analysis for NigerFlora BioSciences.
 
 Synchronous functions; FastAPI runs them in its thread pool.
 """

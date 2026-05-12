@@ -274,13 +274,6 @@ function InquiryModal({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-const NIGERIAN_STATES = [
-  "Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno",
-  "Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT","Gombe","Imo",
-  "Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa",
-  "Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara",
-];
-
 const DESTINATION_COUNTRIES = [
   "Germany","United Kingdom","United States","France","Netherlands","Canada",
   "UAE","Saudi Arabia","China","Japan","India","Australia",
@@ -323,7 +316,7 @@ export default function ExportMarketplace() {
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-3xl">🌿</span>
-              <span className="text-gold-300 font-bold text-sm uppercase tracking-widest">NaijaMed Export Hub</span>
+              <span className="text-gold-300 font-bold text-sm uppercase tracking-widest">NigerFlora Export Hub</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold mb-2">
               Nigerian Herb Export Marketplace

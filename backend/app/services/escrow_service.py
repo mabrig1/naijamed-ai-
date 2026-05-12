@@ -110,19 +110,19 @@ def flw_create_payment_link(
         "tx_ref": tx_ref,
         "amount": amount,
         "currency": currency.upper(),
-        "redirect_url": redirect_url or "https://naijamed.ai/escrow/callback",
+        "redirect_url": redirect_url or "https://nigerflora.mabrigkorie.org/escrow/callback",
         "customer": {
             "email": buyer_email,
             "name": buyer_name,
         },
         "customizations": {
-            "title": "NaijaMed Export Escrow",
+            "title": "NigerFlora Export Escrow",
             "description": f"Secure payment for Order #{order_id}",
-            "logo": "https://naijamed.ai/logo.png",
+            "logo": "https://nigerflora.mabrigkorie.org/logo.png",
         },
         "meta": {
-            "naijamed_order_id": order_id,
-            "naijamed_type": "escrow_hold",
+            "nigerflora_order_id": order_id,
+            "nigerflora_type": "escrow_hold",
         },
     }
     data = _flw_post("/payments", payload)
@@ -167,11 +167,11 @@ def flw_transfer_to_seller(
         "account_bank": account_bank,
         "account_number": account_number,
         "amount": amount,
-        "narration": narration or f"NaijaMed escrow release — Order #{order_id}",
+        "narration": narration or f"NigerFlora escrow release — Order #{order_id}",
         "currency": currency.upper(),
         "reference": reference,
         "debit_currency": debit_currency.upper(),
-        "meta": [{"sender": "NaijaMed AI", "sender_country": "NG", "mobile_number": ""}],
+        "meta": [{"sender": "NigerFlora BioSciences", "sender_country": "NG", "mobile_number": ""}],
     }
     data = _flw_post("/transfers", payload)
     if data.get("status") not in ("success", "NEW"):
@@ -223,10 +223,10 @@ def stripe_create_payment_intent(
         "amount": amount_cents,
         "currency": currency.lower(),
         "capture_method": "manual",        # hold without capturing
-        "description": f"NaijaMed escrow hold — Order #{order_id}",
+        "description": f"NigerFlora escrow hold — Order #{order_id}",
         "metadata": {
-            "naijamed_order_id": str(order_id),
-            "naijamed_type": "escrow_hold",
+            "nigerflora_order_id": str(order_id),
+            "nigerflora_type": "escrow_hold",
         },
     }
     if buyer_email:
@@ -287,8 +287,8 @@ def stripe_transfer_to_seller(
             currency=currency.lower(),
             destination=seller_stripe_account_id,
             transfer_group=f"NM-ESC-{order_id}",
-            description=f"NaijaMed escrow release — Order #{order_id}",
-            metadata={"naijamed_order_id": str(order_id)},
+            description=f"NigerFlora escrow release — Order #{order_id}",
+            metadata={"nigerflora_order_id": str(order_id)},
         )
     except Exception as exc:
         raise HTTPException(
@@ -333,7 +333,7 @@ def stripe_verify_webhook(
 # ===========================================================================
 
 _DISPUTE_PROMPT = """
-You are a neutral escrow dispute resolution specialist for NaijaMed AI,
+You are a neutral escrow dispute resolution specialist for NigerFlora BioSciences,
 a Nigerian herb export marketplace connecting African farmers with global buyers.
 
 Your role is ADVISORY ONLY. A human admin will review your recommendation
@@ -383,7 +383,7 @@ Return ONLY a valid JSON object (no markdown, no explanation):
   "key_factors_favoring_seller": ["<factor 1>", "<factor 2>"],
   "key_factors_favoring_buyer": ["<factor 1>", "<factor 2>"],
   "recommended_action": "<specific next step for the admin — e.g. 'Request photo evidence from buyer before deciding'>",
-  "disclaimer": "This is an AI advisory recommendation. Final decision rests with the NaijaMed admin."
+  "disclaimer": "This is an AI advisory recommendation. Final decision rests with the NigerFlora admin."
 }}
 """
 
@@ -464,7 +464,7 @@ def dispute_resolution_ai(
     result.setdefault("recommended_action", "Request additional evidence from both parties.")
     result.setdefault(
         "disclaimer",
-        "This is an AI advisory recommendation. Final decision rests with the NaijaMed admin.",
+        "This is an AI advisory recommendation. Final decision rests with the NigerFlora admin.",
     )
     return result
 

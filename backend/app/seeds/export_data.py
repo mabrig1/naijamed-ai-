@@ -1,5 +1,5 @@
 """
-Seed — Export Engine demonstration data for NaijaMed AI.
+Seed — Export Engine demonstration data for NigerFlora BioSciences.
 
 Creates:
   • 2 seed seller users + 5 seed buyer users (if users table < 3 non-admin rows)
@@ -60,15 +60,15 @@ def _seed_seed_users(db) -> None:
         return
 
     pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    hashed_pw = pwd_ctx.hash("NaijaMed@2024!")
+    hashed_pw = pwd_ctx.hash("NigerFlora@2024!")
 
     for email in _SELLER_EMAILS:
         name = email.split("@")[0].replace(".", " ").title()
         db.add(User(
             email=email,
             full_name=name,
-            hashed_password=hashed_pw,
-            role=UserRole.user,
+            password_hash=hashed_pw,
+            role=UserRole.farmer,
             is_active=True,
         ))
 
@@ -77,8 +77,8 @@ def _seed_seed_users(db) -> None:
         db.add(User(
             email=email,
             full_name=name,
-            hashed_password=hashed_pw,
-            role=UserRole.user,
+            password_hash=hashed_pw,
+            role=UserRole.researcher,
             is_active=True,
         ))
 
@@ -465,7 +465,7 @@ def _seed_extra_price_rows(db) -> None:
     # Use a unique source tag to detect if already seeded
     sentinel_count = (
         db.query(ExportPriceIndex)
-        .filter(ExportPriceIndex.source == "NaijaMed Seed v2")
+        .filter(ExportPriceIndex.source == "NigerFlora Seed v2")
         .count()
     )
     if sentinel_count > 0:
@@ -493,7 +493,7 @@ def _seed_extra_price_rows(db) -> None:
                     price_per_kg_usd=Decimal(str(round(adj_price, 4))),
                     currency="USD",
                     recorded_date=record_date,
-                    source="NaijaMed Seed v2",
+                    source="NigerFlora Seed v2",
                 ))
                 inserted += 1
 

@@ -1,5 +1,5 @@
 """
-Export Matching Engine — Claude-powered buyer/seller matchmaking for NaijaMed AI.
+Export Matching Engine — Claude-powered buyer/seller matchmaking for NigerFlora BioSciences.
 
 Three public functions:
   match_buyers_to_herb   → rank best global buyers for a given herb listing
@@ -90,7 +90,7 @@ Rules:
 """
 
 _TRADE_INTRO_PROMPT = """
-You are a professional Nigerian export trade facilitator writing on behalf of NaijaMed AI,
+You are a professional Nigerian export trade facilitator writing on behalf of NigerFlora BioSciences,
 a digital platform connecting Nigerian herbal product sellers with global buyers.
 
 Write a formal trade introduction letter from the Nigerian seller to the global buyer.
@@ -107,7 +107,7 @@ Herb / product details:
 Requirements:
 - Professional business letter format (no email headers)
 - 3-4 paragraphs
-- Paragraph 1: Introduce the seller and NaijaMed AI platform context
+- Paragraph 1: Introduce the seller and NigerFlora BioSciences platform context
 - Paragraph 2: Describe the herb, its grade, certifications, and why it is a premium product
 - Paragraph 3: Connect the herb's properties/market to the buyer's specific needs/industry
 - Paragraph 4: Call to action — invite the buyer to respond via the platform

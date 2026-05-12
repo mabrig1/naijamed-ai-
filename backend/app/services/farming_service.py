@@ -1,5 +1,5 @@
 """
-Smart Farming Intelligence — Gemini-powered market demand prediction for NaijaMed AI.
+Smart Farming Intelligence — Gemini-powered market demand prediction for NigerFlora BioSciences.
 
 Synchronous functions; FastAPI runs them in its thread pool.
 """

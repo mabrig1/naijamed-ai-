@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    APP_NAME: str = "NaijaMed AI"
+    APP_NAME: str = "NigerFlora BioSciences"
     APP_ENV: str = "development"
 
     SECRET_KEY: str = "dev-secret-key-change-in-production"
@@ -52,8 +52,11 @@ class Settings(BaseSettings):
     # ── Currency conversion — exchangerate-api.com ───────────────────────────
     EXCHANGERATE_API_KEY: str = ""
 
-    # Frontend origin — used in CORS allow list
+    # Frontend origin(s) — used in CORS allow list.
+    # FRONTEND_URL: primary production URL (e.g. https://nigerflora.mabrigkorie.org)
+    # EXTRA_CORS_ORIGINS: comma-separated additional origins (e.g. Vercel preview URLs)
     FRONTEND_URL: str = "http://localhost:5173"
+    EXTRA_CORS_ORIGINS: str = ""
 
     # Rate limiting
     AI_RATE_LIMIT: str = "10/minute"
@@ -71,6 +74,10 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5173",
             self.FRONTEND_URL,
         }
+        for origin in self.EXTRA_CORS_ORIGINS.split(","):
+            origin = origin.strip()
+            if origin:
+                origins.add(origin)
         return list(origins)
 
 

@@ -42,7 +42,7 @@ export default function CreateListing() {
       <div className="bg-forest-600 text-white px-6 py-6 rounded-xl">
         <h1 className="text-2xl font-bold">🌿 List Your Herbs</h1>
         <p className="text-forest-200 text-sm mt-1">
-          Connect your harvest to pharmaceutical buyers, researchers, and the NaijaMed network.
+          Connect your harvest to pharmaceutical buyers, researchers, and the NigerFlora network.
         </p>
       </div>
 

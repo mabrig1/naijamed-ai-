@@ -15,7 +15,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function loadUser(): User | null {
   try {
-    const raw = localStorage.getItem("naijamed_user");
+    const raw = localStorage.getItem("nigerflora_user");
     return raw ? (JSON.parse(raw) as User) : null;
   } catch {
     return null;
@@ -25,13 +25,13 @@ function loadUser(): User | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(loadUser);
   const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem("naijamed_token")
+    () => localStorage.getItem("nigerflora_token")
   );
 
   const persist = useCallback((tokenData: Token) => {
-    localStorage.setItem("naijamed_token", tokenData.access_token);
-    localStorage.setItem("naijamed_refresh", tokenData.refresh_token);
-    localStorage.setItem("naijamed_user", JSON.stringify(tokenData.user));
+    localStorage.setItem("nigerflora_token", tokenData.access_token);
+    localStorage.setItem("nigerflora_refresh", tokenData.refresh_token);
+    localStorage.setItem("nigerflora_user", JSON.stringify(tokenData.user));
     setToken(tokenData.access_token);
     setUser(tokenData.user);
   }, []);
@@ -55,13 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    const storedToken = localStorage.getItem("naijamed_token");
+    const storedToken = localStorage.getItem("nigerflora_token");
     if (storedToken) {
       api.post("/api/auth/logout").catch(() => { /* fire-and-forget */ });
     }
-    localStorage.removeItem("naijamed_token");
-    localStorage.removeItem("naijamed_refresh");
-    localStorage.removeItem("naijamed_user");
+    localStorage.removeItem("nigerflora_token");
+    localStorage.removeItem("nigerflora_refresh");
+    localStorage.removeItem("nigerflora_user");
     setToken(null);
     setUser(null);
   }, []);
@@ -73,9 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.get<User>("/api/auth/me")
       .then(({ data }) => setUser(data))
       .catch(() => {
-        localStorage.removeItem("naijamed_token");
-        localStorage.removeItem("naijamed_refresh");
-        localStorage.removeItem("naijamed_user");
+        localStorage.removeItem("nigerflora_token");
+        localStorage.removeItem("nigerflora_refresh");
+        localStorage.removeItem("nigerflora_user");
         setToken(null);
         setUser(null);
       });
