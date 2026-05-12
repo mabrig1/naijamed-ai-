@@ -62,7 +62,7 @@ function PriceLineChart({
   const xStep = Math.max(1, Math.floor(points.length / 5));
   const xLabels = points
     .filter((_, i) => i % xStep === 0 || i === points.length - 1)
-    .map((p, j) => {
+    .map((_p, j) => {
       const i = j * xStep >= points.length ? points.length - 1 : j * xStep;
       const date = new Date(points[i].date);
       return { x: xs[i], label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) };

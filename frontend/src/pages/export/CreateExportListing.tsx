@@ -442,7 +442,7 @@ export default function CreateExportListing() {
               </div>
               {form.images.length > 0 && (
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {form.images.map((img, i) => (
+                  {form.images.map((_img, i) => (
                     <div key={i} className="relative">
                       <div className="w-14 h-14 bg-forest-50 rounded-lg flex items-center justify-center text-xs text-gray-500 overflow-hidden">
                         🖼️
