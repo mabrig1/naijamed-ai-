@@ -63,14 +63,21 @@ class Settings(BaseSettings):
     def effective_gemini_key(self) -> str:
         return self.GEMINI_API_KEY or self.GOOGLE_API_KEY
 
+    EXTRA_CORS_ORIGINS: str = ""
+
     @property
     def CORS_ORIGINS(self) -> List[str]:
         origins = {
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:5173",
+            "https://nigerflora-biosciences.vercel.app",
+            "https://nigerflora.mabrigkorie.org",
             self.FRONTEND_URL,
         }
+        if self.EXTRA_CORS_ORIGINS:
+            for o in self.EXTRA_CORS_ORIGINS.split(","):
+                origins.add(o.strip())
         return list(origins)
 
 
