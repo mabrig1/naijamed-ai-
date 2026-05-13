@@ -1,0 +1,3 @@
+[submodule "ai-video-agent"]
+	path = ai-video-agent
+	url = https://github.com/SamurAIGPT/Generative-Media-Skills.git
