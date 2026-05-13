@@ -1,0 +1,186 @@
+{
+  "theme": "flat-motion-graphics",
+  "cuts": [
+    {
+      "id": "naijamed-hero",
+      "source": "",
+      "type": "hero_title",
+      "in_seconds": 0,
+      "out_seconds": 4,
+      "text": "NaijaMed AI",
+      "subtitle": "From soil to science to pharmacy — Nigeria's herbal future, powered by AI",
+      "backgroundColor": "#052818"
+    },
+    {
+      "id": "naijamed-problem",
+      "source": "",
+      "type": "callout",
+      "in_seconds": 4,
+      "out_seconds": 9,
+      "title": "The Problem",
+      "text": "Nigeria has centuries of proven herbal medicine knowledge — but no system to validate, export, or scale it for the world.",
+      "callout_type": "warning",
+      "accentColor": "#FCD34D",
+      "backgroundColor": "#0A1628",
+      "color": "#F8FAFC"
+    },
+    {
+      "id": "naijamed-scale",
+      "source": "",
+      "type": "stat_card",
+      "in_seconds": 9,
+      "out_seconds": 14,
+      "stat": "200M+",
+      "subtitle": "Nigerians who deserve affordable, locally-rooted healthcare solutions",
+      "accentColor": "#16A34A",
+      "backgroundColor": "#0A1628"
+    },
+    {
+      "id": "naijamed-what",
+      "source": "",
+      "type": "text_card",
+      "in_seconds": 14,
+      "out_seconds": 20,
+      "text": "NaijaMed AI bridges indigenous herbal knowledge with modern pharmaceutical science.",
+      "subtitle": "Using Google Gemini and Anthropic Claude to digitize, validate, and productionize traditional remedies for the global market.",
+      "color": "#F8FAFC",
+      "backgroundColor": "#0A1628"
+    },
+    {
+      "id": "naijamed-features",
+      "source": "",
+      "type": "kpi_grid",
+      "in_seconds": 20,
+      "out_seconds": 27,
+      "title": "One platform. Every step of the journey.",
+      "chartData": [
+        { "label": "AI Validation", "value": 30, "change": 100, "suffix": "+ herbs" },
+        { "label": "Export Marketplace", "value": 6, "change": 100, "suffix": " regions" },
+        { "label": "Compliance Stack", "value": 5, "change": 100, "suffix": " agencies" },
+        { "label": "Price Intelligence", "value": 90, "change": 100, "suffix": "-day forecast" }
+      ],
+      "columns": 2,
+      "chartColors": ["#16A34A", "#22D3EE", "#FCD34D", "#A78BFA"],
+      "chartAnimation": "cascade",
+      "backgroundColor": "#0A1628"
+    },
+    {
+      "id": "naijamed-global",
+      "source": "",
+      "type": "bar_chart",
+      "in_seconds": 27,
+      "out_seconds": 33,
+      "title": "Verified global buyers in 6 regions",
+      "chartData": [
+        { "label": "UK", "value": 92 },
+        { "label": "EU", "value": 88 },
+        { "label": "UAE", "value": 76 },
+        { "label": "USA", "value": 85 },
+        { "label": "India", "value": 70 },
+        { "label": "Canada", "value": 65 }
+      ],
+      "chartColors": ["#16A34A", "#16A34A", "#16A34A", "#16A34A", "#16A34A", "#16A34A"],
+      "showGrid": true,
+      "showValues": true,
+      "backgroundColor": "#0A1628"
+    },
+    {
+      "id": "naijamed-compare",
+      "source": "",
+      "type": "comparison",
+      "in_seconds": 33,
+      "out_seconds": 39,
+      "title": "The NaijaMed difference",
+      "leftLabel": "Before",
+      "leftValue": "Manual, unverified, local-only",
+      "rightLabel": "With NaijaMed AI",
+      "rightValue": "Validated, compliant, globally exported",
+      "accentColor": "#16A34A",
+      "backgroundColor": "#0A1628",
+      "color": "#F8FAFC"
+    },
+    {
+      "id": "naijamed-who",
+      "source": "",
+      "type": "pie_chart",
+      "in_seconds": 39,
+      "out_seconds": 45,
+      "title": "Built for everyone in the chain",
+      "chartData": [
+        { "label": "Herbal Farmers", "value": 35 },
+        { "label": "Producers & Exporters", "value": 40 },
+        { "label": "Pharmacists & Buyers", "value": 25 }
+      ],
+      "chartColors": ["#16A34A", "#22D3EE", "#FCD34D"],
+      "donut": true,
+      "centerLabel": "Users",
+      "centerValue": "3 tiers",
+      "showLegend": true,
+      "backgroundColor": "#0A1628"
+    },
+    {
+      "id": "naijamed-compliance",
+      "source": "",
+      "type": "progress_bar",
+      "in_seconds": 45,
+      "out_seconds": 51,
+      "title": "Full regulatory compliance built in",
+      "progress": 1.0,
+      "progressLabel": "NAFDAC · NEPC · NCS · NAQS · CBN — all covered",
+      "progressColor": "#16A34A",
+      "backgroundColor": "#0A1628"
+    },
+    {
+      "id": "naijamed-ai",
+      "source": "",
+      "type": "callout",
+      "in_seconds": 51,
+      "out_seconds": 57,
+      "title": "Powered by World-Class AI",
+      "text": "Google Gemini + Anthropic Claude drive herb validation, customs Q&A, price forecasting, escrow dispute resolution, and export document generation.",
+      "callout_type": "tip",
+      "accentColor": "#16A34A",
+      "backgroundColor": "#0A1628",
+      "color": "#F8FAFC"
+    },
+    {
+      "id": "naijamed-close",
+      "source": "",
+      "type": "hero_title",
+      "in_seconds": 57,
+      "out_seconds": 60,
+      "text": "NaijaMed AI",
+      "subtitle": "naijamed.ai — Where Nigerian herbal heritage meets global medicine.",
+      "backgroundColor": "#052818"
+    }
+  ],
+  "overlays": [
+    {
+      "type": "section_title",
+      "in_seconds": 20.2,
+      "out_seconds": 23,
+      "text": "Platform",
+      "subtitle": "End-to-end from farm to pharmacy",
+      "accentColor": "#16A34A"
+    },
+    {
+      "type": "stat_reveal",
+      "in_seconds": 27.2,
+      "out_seconds": 30.5,
+      "text": "6 regions",
+      "subtitle": "Verified global buyer network",
+      "accentColor": "#22D3EE",
+      "position": "bottom-right"
+    },
+    {
+      "type": "section_title",
+      "in_seconds": 39.2,
+      "out_seconds": 41.8,
+      "text": "Who It Serves",
+      "subtitle": "Farmers · Producers · Buyers",
+      "accentColor": "#FCD34D"
+    }
+  ],
+  "captions": [],
+  "audio": {}
+}
