@@ -9,6 +9,8 @@ import { Spinner } from "./components/Layout";
 const Landing             = lazy(() => import("./pages/Landing"));
 const Login               = lazy(() => import("./pages/Auth/Login"));
 const Register            = lazy(() => import("./pages/Auth/Register"));
+const ForgotPassword      = lazy(() => import("./pages/Auth/ForgotPassword"));
+const ResetPassword       = lazy(() => import("./pages/Auth/ResetPassword"));
 const Dashboard           = lazy(() => import("./pages/Dashboard"));
 
 const HerbList            = lazy(() => import("./pages/Herbs/HerbList"));
@@ -80,8 +82,10 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<Landing />} />
-        <Route path="/login"    element={<PublicOnly><Login /></PublicOnly>} />
-        <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
+        <Route path="/login"            element={<PublicOnly><Login /></PublicOnly>} />
+        <Route path="/register"         element={<PublicOnly><Register /></PublicOnly>} />
+        <Route path="/forgot-password"  element={<ForgotPassword />} />
+        <Route path="/reset-password"   element={<ResetPassword />} />
 
         {/* Protected — all share the Layout shell */}
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>

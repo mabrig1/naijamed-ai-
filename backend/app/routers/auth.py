@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import (
     create_access_token,
+    create_password_reset_token,
     create_refresh_token,
+    decode_password_reset_token,
     decode_refresh_token,
     get_current_user,
     hash_password,
@@ -12,6 +15,7 @@ from app.core.security import (
 )
 from app.models.user import User
 from app.schemas.auth import RefreshRequest, Token, UserCreate, UserLogin, UserOut
+from app.services.notification_service import send_password_reset_email, send_welcome_email
 
 router = APIRouter()
 
@@ -30,8 +34,16 @@ def _build_token(user: User) -> Token:
     )
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(body: UserCreate, db: Session = Depends(get_db)):
+def register(body: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     user = User(
@@ -43,7 +55,29 @@ def register(body: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    background_tasks.add_task(send_welcome_email, user.email, user.full_name)
     return user
+
+
+@router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
+def forgot_password(body: ForgotPasswordRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email).first()
+    if user and user.is_active:
+        token = create_password_reset_token(user.id)
+        background_tasks.add_task(send_password_reset_email, user.email, user.full_name, token)
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    payload = decode_password_reset_token(body.token)
+    user = db.get(User, int(payload["sub"]))
+    if not user or not user.is_active:
+        raise HTTPException(status_code=400, detail="User not found")
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+    user.password_hash = hash_password(body.new_password)
+    user.token_version += 1
+    db.commit()
 
 
 @router.post("/login", response_model=Token)

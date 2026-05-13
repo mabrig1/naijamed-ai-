@@ -53,8 +53,8 @@ class SMSResult:
 # ---------------------------------------------------------------------------
 
 _SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
-_FROM_EMAIL = "noreply@naijamed.ai"
-_FROM_NAME  = "NaijaMed AI"
+_FROM_EMAIL = getattr(settings, "FROM_EMAIL", "noreply@nigerflora.com")
+_FROM_NAME  = "NigerFlora BioSciences"
 
 
 def _send_via_sendgrid(to_email: str, subject: str, html_body: str, plain_body: str) -> EmailResult:
@@ -449,6 +449,71 @@ def notify_temperature_breach(
         sms_result = send_sms(buyer_phone, sms_msg)
 
     return {"email": email_result.__dict__, "sms": sms_result.__dict__ if sms_result else None}
+
+
+def send_welcome_email(to_email: str, full_name: str) -> EmailResult:
+    """Send a welcome email to a newly registered user."""
+    subject = "Welcome to NigerFlora BioSciences!"
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px">
+      <div style="background:#1a5c38;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px">🌿 NigerFlora BioSciences</h1>
+        <p style="color:#b7dfc7;margin:4px 0 0">From Soil to Science to Pharmacy</p>
+      </div>
+      <div style="padding:28px;background:#fff;border:1px solid #eee;border-top:none">
+        <h2 style="color:#1a5c38">Welcome, {full_name}!</h2>
+        <p>Your account has been created successfully. You now have access to:</p>
+        <ul style="color:#444;line-height:1.8">
+          <li>🌾 Herb database with 15+ Nigerian medicinal herbs</li>
+          <li>🔬 Clinical trial submission and research tools</li>
+          <li>🏭 AI-powered drug formulation lab</li>
+          <li>🚢 Export marketplace and logistics engine</li>
+          <li>🤖 AI assistants for compliance and customs</li>
+        </ul>
+        <p style="margin-top:24px">
+          <a href="{settings.FRONTEND_URL}/dashboard"
+             style="background:#1a5c38;color:white;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:bold">
+            Go to Dashboard →
+          </a>
+        </p>
+      </div>
+      <div style="padding:16px;text-align:center;background:#f5f5f5;border-radius:0 0 8px 8px">
+        <p style="font-size:12px;color:#999;margin:0">NigerFlora BioSciences · Abuja, Nigeria</p>
+      </div>
+    </div>
+    """
+    return send_email(to_email, subject, html)
+
+
+def send_password_reset_email(to_email: str, full_name: str, token: str) -> EmailResult:
+    """Send a password reset link."""
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    subject = "Reset Your NigerFlora Password"
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px">
+      <div style="background:#1a5c38;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+        <h1 style="color:white;margin:0;font-size:22px">🌿 NigerFlora BioSciences</h1>
+      </div>
+      <div style="padding:28px;background:#fff;border:1px solid #eee;border-top:none">
+        <h2 style="color:#1a5c38">Password Reset Request</h2>
+        <p>Hi <strong>{full_name}</strong>,</p>
+        <p>We received a request to reset your password. Click the button below — this link expires in <strong>1 hour</strong>.</p>
+        <p style="margin-top:24px">
+          <a href="{reset_url}"
+             style="background:#1a5c38;color:white;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:bold">
+            Reset Password →
+          </a>
+        </p>
+        <p style="margin-top:24px;font-size:13px;color:#888">
+          If you didn't request this, you can safely ignore this email. Your password won't change.
+        </p>
+      </div>
+      <div style="padding:16px;text-align:center;background:#f5f5f5;border-radius:0 0 8px 8px">
+        <p style="font-size:12px;color:#999;margin:0">NigerFlora BioSciences · Abuja, Nigeria</p>
+      </div>
+    </div>
+    """
+    return send_email(to_email, subject, html)
 
 
 def notify_price_alert(

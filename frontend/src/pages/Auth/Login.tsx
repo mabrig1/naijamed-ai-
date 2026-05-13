@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Spinner } from "../../components/Layout";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -40,6 +41,11 @@ export default function Login() {
           <h2 className="text-2xl font-bold text-forest-700 mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-6">Sign in to your account to continue</p>
 
+          {searchParams.get("reset") === "success" && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm flex items-center gap-2">
+              <span>✅</span> Password reset successfully. Sign in with your new password.
+            </div>
+          )}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center gap-2">
               <span>⚠️</span> {error}
@@ -60,7 +66,12 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="label">Password</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Password</label>
+                <Link to="/forgot-password" className="text-xs text-forest-600 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 className="input"

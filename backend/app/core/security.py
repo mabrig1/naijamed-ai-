@@ -107,6 +107,22 @@ def get_current_user(
     return user
 
 
+def create_password_reset_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(hours=1)
+    payload = {"sub": str(user_id), "exp": expire, "type": "password_reset"}
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_password_reset_token(token: str) -> dict:
+    try:
+        payload = _decode_raw(token)
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    if payload.get("type") != "password_reset":
+        raise HTTPException(status_code=400, detail="Invalid token type")
+    return payload
+
+
 def require_role(*roles: UserRole) -> Callable:
     """Return a dependency that enforces role membership.
 
