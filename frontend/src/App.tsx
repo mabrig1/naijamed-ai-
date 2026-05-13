@@ -49,6 +49,8 @@ const CustomsAssistant        = lazy(() => import("./pages/customs/CustomsAssist
 const PriceIntelligence       = lazy(() => import("./pages/prices/PriceIntelligence"));
 
 const EscrowDashboard         = lazy(() => import("./pages/escrow/EscrowDashboard"));
+const AdminDashboard          = lazy(() => import("./pages/admin/AdminDashboard"));
+const Help                    = lazy(() => import("./pages/Help"));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -133,6 +135,12 @@ export default function App() {
 
           {/* Escrow */}
           <Route path="/escrow"                        element={<EscrowDashboard />} />
+
+          {/* Admin */}
+          <Route path="/admin"                         element={<AdminDashboard />} />
+
+          {/* Help */}
+          <Route path="/help"                          element={<Help />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

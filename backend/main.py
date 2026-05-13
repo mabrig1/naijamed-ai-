@@ -23,6 +23,7 @@ from app.routers import ai, admin, auth, compliance, customs, escrow, export_mar
 from app.seeds.herbs import seed_herbs
 from app.seeds.price_index import seed_price_index
 from app.seeds.export_data import seed_export_data
+from app.seeds.admin import seed_admin
 
 
 @asynccontextmanager
@@ -31,9 +32,10 @@ async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        seed_herbs(db)          # must run first — price index & listings FK to herbs
-        seed_price_index(db)    # 15 herbs × 3 regions × 28 months of price history
-        seed_export_data(db)    # 10 listings, 5 buyers, 3 shipments, extra price rows
+        seed_herbs(db)
+        seed_price_index(db)
+        seed_export_data(db)
+        seed_admin(db)
     finally:
         db.close()
     yield
