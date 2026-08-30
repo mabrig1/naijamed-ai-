@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
+from uuid import uuid4
 
 import httpx
 from bson import ObjectId
@@ -32,6 +33,32 @@ SCIENTIFIC_NOTICE = (
     "They are not experimental validation, clinical evidence, or proof of efficacy or safety."
 )
 
+COMPOUND_ASSET_FIELDS = {
+    "kind",
+    "external_id",
+    "name",
+    "source",
+    "source_url",
+    "image_url",
+    "molecular_formula",
+    "molecular_weight",
+    "connectivity_smiles",
+    "smiles",
+    "inchikey",
+}
+
+PROTEIN_ASSET_FIELDS = {
+    "kind",
+    "external_id",
+    "name",
+    "source",
+    "source_url",
+    "experimental_method",
+    "resolution_angstrom",
+    "citation_title",
+    "polymer_entity_count",
+}
+
 
 class DiscoveryAction(BaseModel):
     action: str
@@ -47,6 +74,10 @@ class DiscoveryAction(BaseModel):
 
 def now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def short_text(value: Any, limit: int) -> str:
+    return str(value or "").strip()[:limit]
 
 
 def user_from_request(request: Request) -> dict[str, Any]:
@@ -87,7 +118,7 @@ def pubchem_lookup(query_value: str) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail="Compound name or CID is required")
     namespace = "cid" if value.isdigit() else "name"
     encoded = quote(value, safe="")
-    properties = "Title,MolecularFormula,MolecularWeight,CanonicalSMILES,IsomericSMILES,InChIKey"
+    properties = "Title,MolecularFormula,MolecularWeight,ConnectivitySMILES,SMILES,InChIKey"
     url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{namespace}/{encoded}/property/{properties}/JSON"
     try:
         response = httpx.get(url, headers=HTTP_HEADERS, timeout=20)
@@ -103,14 +134,16 @@ def pubchem_lookup(query_value: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Compound not found in PubChem")
     row = rows[0]
     cid = str(row.get("CID", ""))
+    if not cid:
+        raise HTTPException(status_code=502, detail="PubChem response did not include a CID")
     return {
         "kind": "compound",
         "external_id": cid,
         "name": row.get("Title") or value,
         "molecular_formula": row.get("MolecularFormula"),
         "molecular_weight": row.get("MolecularWeight"),
-        "canonical_smiles": row.get("CanonicalSMILES") or row.get("ConnectivitySMILES"),
-        "isomeric_smiles": row.get("IsomericSMILES") or row.get("SMILES"),
+        "connectivity_smiles": row.get("ConnectivitySMILES"),
+        "smiles": row.get("SMILES"),
         "inchikey": row.get("InChIKey"),
         "source": "PubChem",
         "source_url": f"https://pubchem.ncbi.nlm.nih.gov/compound/{cid}",
@@ -173,6 +206,62 @@ def normalize_parameters(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def normalize_asset(asset: dict[str, Any]) -> tuple[str, str, dict[str, Any]]:
+    kind = short_text(asset.get("kind"), 20)
+    external_id = short_text(asset.get("external_id"), 80)
+    if kind not in {"compound", "protein"} or not external_id:
+        raise HTTPException(status_code=422, detail="A valid compound or protein asset is required")
+    if kind == "protein":
+        external_id = external_id.upper()
+    allowed = COMPOUND_ASSET_FIELDS if kind == "compound" else PROTEIN_ASSET_FIELDS
+    safe_asset = {key: asset.get(key) for key in allowed if asset.get(key) is not None}
+    safe_asset["kind"] = kind
+    safe_asset["external_id"] = external_id
+    safe_asset["name"] = short_text(asset.get("name") or external_id, 320)
+    if "source" in safe_asset:
+        safe_asset["source"] = short_text(safe_asset["source"], 120)
+    if "source_url" in safe_asset:
+        safe_asset["source_url"] = short_text(safe_asset["source_url"], 1000)
+    if "image_url" in safe_asset:
+        safe_asset["image_url"] = short_text(safe_asset["image_url"], 1000)
+    return kind, external_id, safe_asset
+
+
+def normalize_network(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    normalized_nodes: list[dict[str, str]] = []
+    node_ids: set[str] = set()
+    for node in nodes:
+        node_id = short_text(node.get("id"), 80)
+        if not node_id or node_id in node_ids:
+            continue
+        node_ids.add(node_id)
+        normalized_nodes.append(
+            {
+                "id": node_id,
+                "label": short_text(node.get("label") or node_id, 240),
+                "type": short_text(node.get("type") or "entity", 40),
+            }
+        )
+    if not normalized_nodes:
+        raise HTTPException(status_code=422, detail="Add at least one valid network node")
+
+    normalized_edges: list[dict[str, str]] = []
+    for edge in edges:
+        source = short_text(edge.get("source"), 80)
+        target = short_text(edge.get("target"), 80)
+        if source not in node_ids or target not in node_ids:
+            raise HTTPException(status_code=422, detail="Every network edge must reference existing node ids")
+        normalized_edges.append(
+            {
+                "source": source,
+                "target": target,
+                "relation": short_text(edge.get("relation") or "associated_with", 120),
+                "evidence": short_text(edge.get("evidence"), 1200),
+            }
+        )
+    return normalized_nodes, normalized_edges
+
+
 @app.get("/api/discovery")
 def discovery_info():
     return {
@@ -203,12 +292,7 @@ def discovery_action(body: DiscoveryAction, request: Request):
         return {"result": rcsb_lookup(body.query or ""), "scientific_notice": SCIENTIFIC_NOTICE}
 
     if body.action == "save_asset":
-        asset = body.asset or {}
-        kind = str(asset.get("kind", "")).strip()
-        external_id = str(asset.get("external_id", "")).strip()
-        if kind not in {"compound", "protein"} or not external_id:
-            raise HTTPException(status_code=422, detail="A valid compound or protein asset is required")
-        safe_asset = {k: v for k, v in asset.items() if k not in {"_id", "user_id", "created_at", "updated_at"}}
+        kind, external_id, safe_asset = normalize_asset(body.asset or {})
         key = {"user_id": user_id, "kind": kind, "external_id": external_id}
         db.discovery_assets.update_one(
             key,
@@ -216,6 +300,8 @@ def discovery_action(body: DiscoveryAction, request: Request):
             upsert=True,
         )
         saved = db.discovery_assets.find_one(key)
+        if not saved:
+            raise HTTPException(status_code=500, detail="Discovery asset could not be saved")
         return {"asset": clean_doc(saved), "message": "Saved to your discovery library."}
 
     if body.action == "library":
@@ -223,8 +309,8 @@ def discovery_action(body: DiscoveryAction, request: Request):
         return {"assets": [clean_doc(row) for row in rows]}
 
     if body.action == "create_screening_job":
-        receptor_id = (body.receptor_id or "").strip().upper()
-        ligand_ids = list(dict.fromkeys(x.strip() for x in body.ligand_ids if x.strip()))
+        receptor_id = short_text(body.receptor_id, 80).upper()
+        ligand_ids = list(dict.fromkeys(short_text(value, 80) for value in body.ligand_ids if short_text(value, 80)))
         if not receptor_id or not ligand_ids:
             raise HTTPException(status_code=422, detail="Choose one saved receptor and at least one saved compound")
         receptor = db.discovery_assets.find_one({"user_id": user_id, "kind": "protein", "external_id": receptor_id})
@@ -232,7 +318,7 @@ def discovery_action(body: DiscoveryAction, request: Request):
         if not receptor or ligand_count != len(ligand_ids):
             raise HTTPException(status_code=409, detail="Screening inputs must come from your saved discovery library")
         parameters = normalize_parameters(body.parameters)
-        job_id = f"VS-{now().strftime('%Y%m%d%H%M%S')}-{str(user['_id'])[-6:]}"
+        job_id = f"VS-{now().strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:8]}"
         manifest = {
             "manifest_version": "1.0",
             "engine": "AutoDock Vina compatible",
@@ -245,7 +331,7 @@ def discovery_action(body: DiscoveryAction, request: Request):
         job = {
             "_id": job_id,
             "user_id": user_id,
-            "title": (body.title or f"Virtual screening against {receptor_id}").strip(),
+            "title": short_text(body.title or f"Virtual screening against {receptor_id}", 240),
             "status": "ready_for_worker",
             "manifest": manifest,
             "results": None,
@@ -260,21 +346,14 @@ def discovery_action(body: DiscoveryAction, request: Request):
         return {"jobs": [clean_doc(row) for row in rows]}
 
     if body.action == "save_network":
-        if not body.nodes:
-            raise HTTPException(status_code=422, detail="Add at least one network node")
-        node_ids = {str(node.get("id", "")) for node in body.nodes if node.get("id")}
-        if not node_ids:
-            raise HTTPException(status_code=422, detail="Each network node needs an id")
-        for edge in body.edges:
-            if str(edge.get("source", "")) not in node_ids or str(edge.get("target", "")) not in node_ids:
-                raise HTTPException(status_code=422, detail="Every network edge must reference existing node ids")
-        network_id = f"NET-{now().strftime('%Y%m%d%H%M%S')}-{str(user['_id'])[-6:]}"
+        normalized_nodes, normalized_edges = normalize_network(body.nodes, body.edges)
+        network_id = f"NET-{now().strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:8]}"
         network = {
             "_id": network_id,
             "user_id": user_id,
-            "title": (body.title or "Interaction evidence network").strip(),
-            "nodes": body.nodes,
-            "edges": body.edges,
+            "title": short_text(body.title or "Interaction evidence network", 240),
+            "nodes": normalized_nodes,
+            "edges": normalized_edges,
             "status": "hypothesis_generating",
             "created_at": now(),
             "updated_at": now(),
