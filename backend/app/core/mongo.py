@@ -43,6 +43,15 @@ def get_db() -> Database:
     db.polyherbal_synergy_projects.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_synergy_projects_user")
     db.polyherbal_synergy_projects.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_synergy_projects_status")
 
+    # Commercial bioinformatics storefront
+    db.research_commerce_orders.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_commerce_orders_user")
+    db.research_commerce_orders.create_index([("payment_status", ASCENDING), ("created_at", DESCENDING)], name="ix_commerce_orders_payment")
+    db.research_commerce_orders.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_commerce_orders_status")
+    db.research_commerce_orders.create_index([("service_id", ASCENDING), ("market", ASCENDING), ("created_at", DESCENDING)], name="ix_commerce_orders_service_market")
+    db.research_commerce_orders.create_index([("receipt_number", ASCENDING)], unique=True, sparse=True, name="uq_commerce_receipt")
+    db.research_sales_leads.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_research_leads_status")
+    db.research_sales_leads.create_index([("email", ASCENDING), ("created_at", DESCENDING)], name="ix_research_leads_email")
+
     # Competitive Discovery Workbench
     db.discovery_assets.create_index(
         [("user_id", ASCENDING), ("kind", ASCENDING), ("external_id", ASCENDING)],
