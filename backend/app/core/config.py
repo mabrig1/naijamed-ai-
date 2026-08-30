@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    APP_NAME: str = "Mabrig HealthOS"
+    APP_NAME: str = "NigerFlora BioSciences"
     APP_ENV: str = "development"
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
@@ -53,8 +53,8 @@ class Settings(BaseSettings):
     DOCTOR_WORKSPACE_MONTHLY_KOBO: int = 1_500_000
     DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE: str = ""
 
-    FRONTEND_URL: str = "http://localhost:5173"
-    EXTRA_CORS_ORIGINS: str = ""
+    FRONTEND_URL: str = "https://nigerflora.mabrigkorie.org"
+    EXTRA_CORS_ORIGINS: str = "https://nigerflora-biosciences.vercel.app"
 
     @property
     def effective_gemini_key(self) -> str:
@@ -66,6 +66,8 @@ class Settings(BaseSettings):
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:5173",
+            "https://nigerflora.mabrigkorie.org",
+            "https://nigerflora-biosciences.vercel.app",
             self.FRONTEND_URL,
         }
         if self.EXTRA_CORS_ORIGINS:
