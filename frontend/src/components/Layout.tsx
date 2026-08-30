@@ -133,9 +133,9 @@ export default function Layout() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-4">
             <Link to="/dashboard" className="flex shrink-0 items-center gap-2.5">
-              <span className="text-2xl">✚</span>
+              <span className="text-2xl">🌿</span>
               <div className="leading-tight">
-                <div className="text-lg font-bold tracking-wide text-gold-300">Mabrig HealthOS</div>
+                <div className="text-lg font-bold tracking-wide text-gold-300">NigerFlora BioSciences</div>
                 <div className="hidden text-[11px] text-forest-200 sm:block">Care · Research · Discovery</div>
               </div>
             </Link>
@@ -236,9 +236,9 @@ export default function Layout() {
       <footer className="mt-auto bg-forest-900 text-forest-200">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-9 md:grid-cols-4">
           <div>
-            <div className="text-lg font-bold text-gold-300">Mabrig HealthOS</div>
+            <div className="text-lg font-bold text-gold-300">NigerFlora BioSciences</div>
             <p className="mt-2 text-sm leading-6 text-forest-300">
-              A Nigerian health, research and computational discovery ecosystem built for responsible innovation.
+              Nigerian healthcare intelligence, ethnobotanical research and computational discovery built for responsible innovation.
             </p>
           </div>
           <div>
@@ -265,7 +265,7 @@ export default function Layout() {
           </div>
         </div>
         <div className="border-t border-forest-800 px-4 py-4 text-center text-xs text-forest-400">
-          © {new Date().getFullYear()} Mabrig HealthOS · Powered by MABRIG Technologies
+          © {new Date().getFullYear()} NigerFlora BioSciences · Powered by MABRIG Technologies
         </div>
       </footer>
     </div>
