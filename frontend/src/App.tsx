@@ -10,6 +10,7 @@ const Landing             = lazy(() => import("./pages/Landing"));
 const Login               = lazy(() => import("./pages/Auth/Login"));
 const Register            = lazy(() => import("./pages/Auth/Register"));
 const Dashboard           = lazy(() => import("./pages/Dashboard"));
+const ResearchStudio      = lazy(() => import("./pages/research/ResearchStudio"));
 
 const HerbList            = lazy(() => import("./pages/Herbs/HerbList"));
 const HerbDetail          = lazy(() => import("./pages/Herbs/HerbDetail"));
@@ -84,6 +85,7 @@ export default function App() {
         {/* Protected — all share the Layout shell */}
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route path="/dashboard"  element={<Dashboard />} />
+          <Route path="/research-studio" element={<ResearchStudio />} />
 
           {/* Herbs */}
           <Route path="/herbs"      element={<HerbList />} />

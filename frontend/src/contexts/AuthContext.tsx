@@ -24,9 +24,7 @@ function loadUser(): User | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(loadUser);
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem("naijamed_token")
-  );
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("naijamed_token"));
 
   const persist = useCallback((tokenData: Token) => {
     localStorage.setItem("naijamed_token", tokenData.access_token);
@@ -41,24 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(data);
   }, [persist]);
 
-  const register = useCallback(
-    async (email: string, fullName: string, password: string, role: string) => {
+  const register = useCallback(async (email: string, fullName: string, password: string, role: string) => {
+    if (role === "researcher") {
+      await api.post("/api/research-studio", {
+        action: "register_researcher",
+        email,
+        full_name: fullName,
+        password,
+      });
+    } else {
       await api.post("/api/auth/register", {
         email,
         full_name: fullName,
         password,
         role,
       });
-      await login(email, password);
-    },
-    [login]
-  );
+    }
+    await login(email, password);
+  }, [login]);
 
   const logout = useCallback(() => {
     const storedToken = localStorage.getItem("naijamed_token");
-    if (storedToken) {
-      api.post("/api/auth/logout").catch(() => { /* fire-and-forget */ });
-    }
+    if (storedToken) api.post("/api/auth/logout").catch(() => undefined);
     localStorage.removeItem("naijamed_token");
     localStorage.removeItem("naijamed_refresh");
     localStorage.removeItem("naijamed_user");
@@ -66,8 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  // Re-validate stored token against the server on mount to catch deactivated accounts
-  // or tokens that were invalidated server-side. If /me fails we clear local state.
   useEffect(() => {
     if (!token) return;
     api.get<User>("/api/auth/me")
@@ -80,12 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally runs once on mount only
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, isAuthenticated: !!token, login, register, logout }}
-    >
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

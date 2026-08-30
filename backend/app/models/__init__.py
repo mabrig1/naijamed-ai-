@@ -1,3 +1,5 @@
+# Legacy SQLAlchemy models retained for source compatibility only.
+# Mabrig HealthOS production persistence uses MongoDB Atlas through app.core.mongo.
 from .user import User, UserRole
 from .herb import Herb
 from .herb_compound import HerbCompound
@@ -8,7 +10,6 @@ from .patient_outcome import PatientOutcome, AgeGroup, Sex, OutcomeResult
 from .compliance_document import ComplianceDocument, ComplianceStatus
 from .subscription import Subscription, SubscriptionPlan
 
-# Export & Logistics engine
 from .export_enums import (
     HerbGrade, PackagingType, FreightChannel, Incoterms, PaymentMethod,
     PaymentStatus, OrderStatus, ShipmentEventType, ExportDocType,
@@ -23,29 +24,3 @@ from .global_buyer import GlobalBuyer
 from .freight_quote import FreightQuote
 from .export_price_index import ExportPriceIndex
 from .escrow_transaction import EscrowTransaction
-
-__all__ = [
-    # Core
-    "User", "UserRole",
-    "Herb",
-    "HerbCompound",
-    "FarmListing",
-    "DrugFormulation", "FormulationType",
-    "ClinicalTrial", "TrialStatus",
-    "PatientOutcome", "AgeGroup", "Sex", "OutcomeResult",
-    "ComplianceDocument", "ComplianceStatus",
-    "Subscription", "SubscriptionPlan",
-    # Export & Logistics
-    "HerbGrade", "PackagingType", "FreightChannel", "Incoterms", "PaymentMethod",
-    "PaymentStatus", "OrderStatus", "ShipmentEventType", "ExportDocType",
-    "BuyerType", "MarketRegion", "EscrowStatus",
-    "ExportListing",
-    "ExportOrder",
-    "Shipment",
-    "ShipmentEvent",
-    "ExportDocument",
-    "GlobalBuyer",
-    "FreightQuote",
-    "ExportPriceIndex",
-    "EscrowTransaction",
-]
