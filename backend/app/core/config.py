@@ -45,8 +45,12 @@ class Settings(BaseSettings):
     AFRICASTALKING_SENDER_ID: str = ""
     NOMINATIM_URL: str = "https://nominatim.openstreetmap.org"
 
+    # Payments — Paystack is the Nigeria-first default; Flutterwave is an optional
+    # international checkout path for the bioinformatics storefront.
     PAYSTACK_SECRET_KEY: str = ""
     PAYSTACK_BASE_URL: str = "https://api.paystack.co"
+    FLUTTERWAVE_SECRET_KEY: str = ""
+    FLUTTERWAVE_BASE_URL: str = "https://api.flutterwave.com"
     CONSULT_PLATFORM_FEE_PERCENT: int = 18
     FAMILY_PASS_MONTHLY_KOBO: int = 500_000
     FAMILY_PASS_PAYSTACK_PLAN_CODE: str = ""
