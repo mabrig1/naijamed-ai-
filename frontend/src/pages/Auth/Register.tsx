@@ -57,8 +57,8 @@ export default function Register() {
     <div className="min-h-screen bg-hero-pattern px-4 py-10">
       <div className="mx-auto w-full max-w-3xl">
         <div className="mb-8 text-center">
-          <div className="mb-3 text-5xl">✚</div>
-          <h1 className="text-3xl font-bold text-white">Join Mabrig HealthOS</h1>
+          <div className="mb-3 text-5xl">🌿</div>
+          <h1 className="text-3xl font-bold text-white">Join NigerFlora BioSciences</h1>
           <p className="mt-1 text-forest-200">Choose the workspace that matches what you want to achieve.</p>
         </div>
 
