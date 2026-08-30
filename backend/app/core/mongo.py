@@ -42,4 +42,15 @@ def get_db() -> Database:
     db.research_service_orders.create_index([("service_id", ASCENDING), ("created_at", DESCENDING)], name="ix_research_orders_service")
     db.polyherbal_synergy_projects.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_synergy_projects_user")
     db.polyherbal_synergy_projects.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_synergy_projects_status")
+
+    # Competitive Discovery Workbench
+    db.discovery_assets.create_index(
+        [("user_id", ASCENDING), ("kind", ASCENDING), ("external_id", ASCENDING)],
+        unique=True,
+        name="uq_discovery_asset",
+    )
+    db.discovery_assets.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_discovery_assets_user")
+    db.discovery_screening_jobs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_screening_jobs_user")
+    db.discovery_screening_jobs.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_screening_jobs_status")
+    db.discovery_networks.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_discovery_networks_user")
     return db
