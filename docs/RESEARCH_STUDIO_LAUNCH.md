@@ -1,8 +1,10 @@
-# Mabrig HealthOS Research & Discovery Studio
+# NigerFlora BioSciences Research & Discovery Studio
 
 ## Commercial objective
 
 Build a high-margin, research-integrity-first digital service line around computational drug discovery, scientific visualization, postgraduate training, and herbal research proposal architecture.
+
+Production URL: `https://nigerflora.mabrigkorie.org`
 
 ## Revenue lanes
 
@@ -20,9 +22,9 @@ Prices are starting points. Final scope should be confirmed before additional ch
 
 ## Client workflow
 
-1. Researcher creates an account.
+1. Researcher creates a NigerFlora account.
 2. Researcher selects a defined service and supplies project information.
-3. Mabrig HealthOS creates a MongoDB order record.
+3. NigerFlora creates a MongoDB order record.
 4. Paystack checkout is initialized.
 5. On return, the app verifies reference, amount, currency and customer email with Paystack.
 6. The order becomes `intake` only after secure payment verification.
