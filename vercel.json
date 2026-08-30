@@ -8,6 +8,7 @@
     }
   },
   "rewrites": [
+    { "source": "/api/research-studio", "destination": "/api/research_studio" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
