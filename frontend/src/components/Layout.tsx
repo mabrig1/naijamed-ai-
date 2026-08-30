@@ -81,7 +81,7 @@ export function StatusBadge({ status }: { status: string }) {
     ready_for_worker: "badge-blue",
     hypothesis_generating: "badge-gold",
   };
-  return <span className={map[status] ?? "badge-gray"}>{status.replaceAll("_", " ")}</span>;
+  return <span className={map[status] ?? "badge-gray"}>{status.split("_").join(" ")}</span>;
 }
 
 export function ProgressBar({ value, max = 100, label }: { value: number; max?: number; label?: string }) {
