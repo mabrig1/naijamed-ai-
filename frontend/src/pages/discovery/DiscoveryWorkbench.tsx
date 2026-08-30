@@ -12,7 +12,8 @@ type Asset = {
   image_url?: string;
   molecular_formula?: string;
   molecular_weight?: number | string;
-  canonical_smiles?: string;
+  connectivity_smiles?: string;
+  smiles?: string;
   inchikey?: string;
   experimental_method?: string;
   resolution_angstrom?: number;
@@ -299,7 +300,7 @@ export default function DiscoveryWorkbench() {
               <div className="min-w-0 text-sm">
                 <div className="font-bold text-forest-800">{compoundResult.name}</div>
                 <div className="mt-1 text-gray-500">CID {compoundResult.external_id} · {compoundResult.molecular_formula} · MW {compoundResult.molecular_weight}</div>
-                {compoundResult.canonical_smiles && <div className="mt-2 break-all rounded-lg bg-gray-50 p-2 text-xs text-gray-600">{compoundResult.canonical_smiles}</div>}
+                {(compoundResult.smiles || compoundResult.connectivity_smiles) && <div className="mt-2 break-all rounded-lg bg-gray-50 p-2 text-xs text-gray-600">{compoundResult.smiles ?? compoundResult.connectivity_smiles}</div>}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button className="btn-primary" onClick={() => void saveAsset(compoundResult)} disabled={busy === "save-compound"}>Save compound</button>
                   {compoundResult.source_url && <a href={compoundResult.source_url} target="_blank" rel="noreferrer" className="btn-outline">Open PubChem</a>}
