@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? window.location.origin : "http://localhost:8000");
 
 export const api = axios.create({
   baseURL: BASE,
@@ -30,7 +32,7 @@ api.interceptors.response.use(
           original.headers.Authorization = `Bearer ${data.access_token}`;
           return api(original);
         } catch {
-          // refresh failed — fall through to clear + redirect
+          // Refresh failed; clear the local session below.
         }
       }
       localStorage.removeItem("naijamed_token");
