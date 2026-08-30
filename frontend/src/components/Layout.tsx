@@ -8,6 +8,7 @@ interface NavItem {
 }
 
 const PRIMARY_NAV: NavItem[] = [
+  { to: "/bioinformatics-services", label: "💼 Bioinformatics" },
   { to: "/discovery", label: "🧪 Discovery" },
   { to: "/research-studio", label: "🧬 Research Studio" },
   { to: "/research", label: "📊 Research" },
@@ -78,6 +79,16 @@ export function StatusBadge({ status }: { status: string }) {
     high: "badge-red",
     medium: "badge-gold",
     low: "badge-gray",
+    pending: "badge-gray",
+    paid: "badge-green",
+    awaiting_payment: "badge-gray",
+    intake: "badge-blue",
+    queued: "badge-blue",
+    running: "badge-gold",
+    review: "badge-gold",
+    delivered: "badge-green",
+    revision: "badge-blue",
+    closed: "badge-gray",
     ready_for_worker: "badge-blue",
     hypothesis_generating: "badge-gold",
   };
@@ -158,12 +169,7 @@ export default function Layout() {
                 {toolsOpen && (
                   <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-forest-100 bg-white p-2 text-gray-800 shadow-2xl">
                     {BUSINESS_TOOLS.map((item) => (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        onClick={() => setToolsOpen(false)}
-                        className="block rounded-xl px-3 py-2.5 text-sm hover:bg-forest-50 hover:text-forest-700"
-                      >
+                      <Link key={item.to} to={item.to} onClick={() => setToolsOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm hover:bg-forest-50 hover:text-forest-700">
                         {item.label}
                       </Link>
                     ))}
@@ -175,14 +181,8 @@ export default function Layout() {
             <div className="flex items-center gap-2">
               {user && (
                 <div className="relative" ref={userRef}>
-                  <button
-                    type="button"
-                    onClick={() => setUserOpen((value) => !value)}
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-forest-500"
-                  >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-forest-900">
-                      {user.full_name.charAt(0).toUpperCase()}
-                    </div>
+                  <button type="button" onClick={() => setUserOpen((value) => !value)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-forest-500">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-forest-900">{user.full_name.charAt(0).toUpperCase()}</div>
                     <div className="hidden text-left sm:block">
                       <div className="text-sm font-medium">{user.full_name.split(" ")[0]}</div>
                       <div className="text-xs text-forest-300">{humanRole(String(user.role))}</div>
@@ -190,25 +190,22 @@ export default function Layout() {
                     <span className="text-xs text-forest-300">▾</span>
                   </button>
                   {userOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-xl border border-forest-100 bg-white py-2 text-gray-800 shadow-xl">
+                    <div className="absolute right-0 mt-2 w-64 rounded-xl border border-forest-100 bg-white py-2 text-gray-800 shadow-xl">
                       <div className="border-b border-gray-100 px-4 py-2">
                         <div className="text-sm font-semibold">{user.full_name}</div>
                         <div className="truncate text-xs text-gray-500">{user.email}</div>
                       </div>
+                      <Link to="/bioinformatics-services" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💼 Order Bioinformatics Analysis</Link>
                       <Link to="/discovery" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧪 Discovery Workbench</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
+                      {String(user.role) === "admin" && <Link to="/research-commerce/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">💰 Research Commerce Admin</Link>}
                       <Link to="/dashboard" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📊 Dashboard</Link>
                       <button type="button" onClick={handleLogout} className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">🚪 Sign out</button>
                     </div>
                   )}
                 </div>
               )}
-              <button
-                type="button"
-                onClick={() => setMobileOpen((value) => !value)}
-                className="rounded-md p-2 text-forest-100 hover:bg-forest-500 xl:hidden"
-                aria-label="Toggle navigation"
-              >
+              <button type="button" onClick={() => setMobileOpen((value) => !value)} className="rounded-md p-2 text-forest-100 hover:bg-forest-500 xl:hidden" aria-label="Toggle navigation">
                 <span className="text-xl">{mobileOpen ? "✕" : "☰"}</span>
               </button>
             </div>
@@ -219,12 +216,7 @@ export default function Layout() {
           <div className="border-t border-forest-600 bg-forest-800 px-4 pb-4 pt-2 xl:hidden">
             <div className="grid gap-1 sm:grid-cols-2">
               {[...PRIMARY_NAV, ...BUSINESS_TOOLS].map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) => `rounded-lg px-3 py-2 text-sm ${isActive ? "bg-forest-900 text-gold-300" : "text-forest-100 hover:bg-forest-700"}`}
-                >
+                <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `rounded-lg px-3 py-2 text-sm ${isActive ? "bg-forest-900 text-gold-300" : "text-forest-100 hover:bg-forest-700"}`}>
                   {item.label}
                 </NavLink>
               ))}
@@ -233,24 +225,20 @@ export default function Layout() {
         )}
       </nav>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        <Outlet />
-      </main>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8"><Outlet /></main>
 
       <footer className="mt-auto bg-forest-900 text-forest-200">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-9 md:grid-cols-4">
           <div>
             <div className="text-lg font-bold text-gold-300">NigerFlora BioSciences</div>
-            <p className="mt-2 text-sm leading-6 text-forest-300">
-              Nigerian healthcare intelligence, ethnobotanical research and computational discovery built for responsible innovation.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-forest-300">Nigerian healthcare intelligence, ethnobotanical research and computational discovery built for responsible innovation.</p>
           </div>
           <div>
             <h4 className="font-semibold text-white">Research Revenue</h4>
             <div className="mt-3 space-y-2 text-sm">
-              <Link className="block hover:text-gold-300" to="/research-studio">Bioinformatics Consulting</Link>
+              <Link className="block font-semibold text-gold-300 hover:text-white" to="/bioinformatics-services">Order Bioinformatics Services</Link>
+              <Link className="block hover:text-gold-300" to="/research-studio">Research Studio</Link>
               <Link className="block hover:text-gold-300" to="/research-studio">Grant & Proposal Support</Link>
-              <Link className="block hover:text-gold-300" to="/research-studio">Training & Workbooks</Link>
             </div>
           </div>
           <div>
@@ -264,14 +252,10 @@ export default function Layout() {
           </div>
           <div>
             <h4 className="font-semibold text-white">Scientific Notice</h4>
-            <p className="mt-3 text-xs leading-5 text-forest-400">
-              In-silico outputs are hypothesis-generating research evidence. They do not establish clinical efficacy, safety, patentability or regulatory approval without appropriate experimental and professional review.
-            </p>
+            <p className="mt-3 text-xs leading-5 text-forest-400">In-silico outputs are hypothesis-generating research evidence. They do not establish clinical efficacy, safety, patentability or regulatory approval without appropriate experimental and professional review.</p>
           </div>
         </div>
-        <div className="border-t border-forest-800 px-4 py-4 text-center text-xs text-forest-400">
-          © {new Date().getFullYear()} NigerFlora BioSciences · Powered by MABRIG Technologies
-        </div>
+        <div className="border-t border-forest-800 px-4 py-4 text-center text-xs text-forest-400">© {new Date().getFullYear()} NigerFlora BioSciences · Powered by MABRIG Technologies</div>
       </footer>
     </div>
   );
