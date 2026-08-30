@@ -2,18 +2,19 @@ import { Link } from "react-router-dom";
 
 const FEATURES = [
   { icon: "🩺", title: "Clinical Navigation", desc: "Agentic triage, red-flag escalation, clinician handoff and structured SOAP-ready case summaries." },
-  { icon: "🧬", title: "Research & Discovery Studio", desc: "Paid network pharmacology, ADMET, molecular docking, scientific figures, grant architecture and training." },
+  { icon: "🧬", title: "Bioinformatics Consulting", desc: "Order network pharmacology, ADMET, molecular docking, Cytoscape networks and publication-ready figures with tracked delivery." },
   { icon: "🌿", title: "Ethnobotanical Intelligence", desc: "Organize Nigerian medicinal-plant evidence, compounds, regional knowledge and discovery datasets." },
   { icon: "🔬", title: "Computational Drug Discovery", desc: "Build reproducible in-silico workflows for target mapping, docking, interaction networks and validation planning." },
   { icon: "📋", title: "Regulatory Workflows", desc: "Support evidence organization, compliance preparation and regulated product-development pathways." },
-  { icon: "🌍", title: "Commercialization Tools", desc: "Connect research, providers, payments, export workflows and product-development services in one ecosystem." },
+  { icon: "🌍", title: "Local + Global Commerce", desc: "NGN and international service packages, secure checkout, project tracking and deliverable handoff." },
 ];
 
 const REVENUE = [
-  ["Network Pharmacology", "From ₦120,000"],
-  ["ADMET Screening", "From ₦75,000"],
-  ["Molecular Docking", "From ₦150,000"],
-  ["In-Silico Thesis Package", "From ₦280,000"],
+  ["Scope Consultation", "₦25,000 / $39"],
+  ["ADMET Screening", "From ₦75,000 / $110"],
+  ["Network Pharmacology", "From ₦120,000 / $180"],
+  ["Molecular Docking", "From ₦150,000 / $220"],
+  ["M.Sc./Ph.D. Package", "From ₦300,000 / $450"],
 ];
 
 export default function Landing() {
@@ -28,6 +29,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Bioinformatics Services</Link>
           <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Sign In</Link>
           <Link to="/register" className="btn-secondary px-4 py-2 text-sm">Get Started</Link>
         </div>
@@ -37,21 +39,22 @@ export default function Landing() {
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 md:grid-cols-[1.2fr_0.8fr] md:py-28">
           <div>
             <div className="mb-5 inline-flex rounded-full bg-forest-800/70 px-4 py-2 text-sm font-medium text-gold-300">
-              🇳🇬 Nigerian-built bioscience and healthcare intelligence
+              🇳🇬 Nigerian-built · 🌍 Global bioinformatics delivery
             </div>
             <h1 className="max-w-4xl text-4xl font-bold leading-tight md:text-6xl">
-              From ethnobotanical knowledge to <span className="text-gold-300">computational evidence</span>, clinical coordination and regulated innovation.
+              From research question to <span className="text-gold-300">computational evidence</span>, tracked analysis and publication-ready outputs.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-forest-100">
-              NigerFlora BioSciences combines responsible AI health workflows, bioinformatics consulting, polyherbal research, postgraduate services and commercialization infrastructure in one Vercel-native platform.
+              NigerFlora BioSciences combines responsible AI health workflows with paid bioinformatics consulting for M.Sc., Ph.D., research groups and academic departments.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/register" className="btn-secondary px-8 py-3 text-center text-base">Create Free Account →</Link>
-              <Link to="/research-studio" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Explore Research Studio</Link>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Link to="/bioinformatics-services" className="btn-secondary px-8 py-3 text-center text-base">View Prices & Order Analysis →</Link>
+              <Link to="/register" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Create Free Account</Link>
+              <Link to="/research-studio" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Research Studio</Link>
             </div>
           </div>
           <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-sm">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-300">High-value research services</div>
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-300">Orderable research services</div>
             <div className="mt-5 space-y-3">
               {REVENUE.map(([name, price]) => (
                 <div key={name} className="flex items-center justify-between gap-3 rounded-xl bg-forest-900/35 px-4 py-3">
@@ -60,6 +63,7 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+            <Link to="/bioinformatics-services" className="mt-5 block rounded-xl bg-gold-400 px-4 py-3 text-center text-sm font-bold text-forest-900">Get instant quote</Link>
           </div>
         </div>
       </section>
@@ -83,9 +87,9 @@ export default function Landing() {
       <section className="bg-forest-800 px-6 py-16 text-white">
         <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
           {[
-            ["1", "Research", "Generate reproducible computational evidence and structured research outputs."],
-            ["2", "Validate", "Move promising findings into appropriate experimental, clinical and professional review."],
-            ["3", "Commercialize", "Build grant, IP, regulatory and market pathways without overstating computational predictions."],
+            ["1", "Order", "Choose a defined bioinformatics package or request a custom project scope."],
+            ["2", "Track", "Follow paid project status, target delivery, progress notes and receipts in your account."],
+            ["3", "Deliver", "Receive reproducible methods, analysis tables, network files and publication-ready figures through secure links."],
           ].map(([step, title, text]) => (
             <div key={step} className="rounded-2xl border border-forest-600 p-6">
               <div className="text-2xl font-bold text-gold-300">{step}</div>
@@ -97,9 +101,12 @@ export default function Landing() {
       </section>
 
       <section className="px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold text-forest-800 md:text-4xl">Build, publish, validate and monetize responsibly.</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-gray-500">Start with a researcher account for computational services, or choose the health/provider workspace that fits your role.</p>
-        <Link to="/register" className="btn-primary mt-8 inline-block px-10 py-3 text-base">Start on NigerFlora →</Link>
+        <h2 className="text-3xl font-bold text-forest-800 md:text-4xl">Need docking, ADMET or Cytoscape analysis this week?</h2>
+        <p className="mx-auto mt-4 max-w-2xl text-gray-500">Start with a published package or send a custom scope. Local pricing is shown in Naira and international pricing in USD.</p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link to="/bioinformatics-services" className="btn-primary inline-block px-10 py-3 text-base">View Bioinformatics Services →</Link>
+          <Link to="/register" className="btn-secondary inline-block px-10 py-3 text-base">Create Researcher Account</Link>
+        </div>
       </section>
 
       <footer className="bg-forest-900 px-6 py-8 text-center text-sm text-forest-300">
