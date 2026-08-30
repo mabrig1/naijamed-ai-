@@ -40,6 +40,7 @@ export default function ResearchStudio() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ResearchService | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState("");
   const [orderForm, setOrderForm] = useState({ project_title: "", institution: "", notes: "" });
   const [plants, setPlants] = useState("");
   const [indication, setIndication] = useState("");
@@ -55,6 +56,20 @@ export default function ResearchStudio() {
         setError(message ?? "Could not load the Research Studio catalog.");
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const reference = params.get("reference") ?? params.get("trxref");
+    if (!reference) return;
+    setPaymentMessage("Verifying your payment…");
+    api.post<{ message: string }>("/api/research-studio", { action: "verify_order", reference })
+      .then(({ data }) => setPaymentMessage(data.message))
+      .catch((err: unknown) => {
+        const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        setPaymentMessage(message ?? "Payment verification is still pending. Your order reference has been retained.");
+      })
+      .finally(() => window.history.replaceState({}, "", "/research-studio"));
   }, []);
 
   const grouped = useMemo(() => {
@@ -78,7 +93,7 @@ export default function ResearchStudio() {
         project_title: orderForm.project_title || undefined,
         institution: orderForm.institution || undefined,
         notes: orderForm.notes || undefined,
-        callback_url: `${window.location.origin}/research-studio?payment=return`,
+        callback_url: `${window.location.origin}/research-studio`,
       });
       if (data.authorization_url) window.location.assign(data.authorization_url);
     } catch (err: unknown) {
@@ -149,6 +164,10 @@ export default function ResearchStudio() {
           </div>
         </div>
       </section>
+
+      {paymentMessage && (
+        <div className="rounded-xl border border-forest-200 bg-forest-50 p-4 text-sm font-medium text-forest-800">✓ {paymentMessage}</div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">⚠️ {error}</div>
