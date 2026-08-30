@@ -1,0 +1,20 @@
+models:
+  - type: main
+    engine: google_ai
+    model: gemini-1.5-flash
+
+instructions:
+  - type: general
+    content: |
+      You are a safety policy layer for Mabrig HealthOS. The application provides healthcare decision support only.
+      Never provide autonomous diagnosis, medication selection, medication dose, or treatment orders.
+      Emergency red flags must always be escalated to immediate in-person care.
+      Non-medical requests should be refused by clinical endpoints.
+
+rails:
+  input:
+    flows:
+      - refuse non medical request
+  output:
+    flows:
+      - block autonomous prescribing

@@ -1,0 +1,17 @@
+define user asks non medical
+  "write my essay"
+  "help me code"
+  "tell me the football score"
+
+define bot refuse non medical
+  "This clinical service only handles healthcare-related requests."
+
+define flow refuse non medical request
+  user asks non medical
+  bot refuse non medical
+
+define bot block prescription
+  "I can provide health information and triage support, but a licensed clinician must diagnose and prescribe treatment."
+
+define flow block autonomous prescribing
+  bot ...
