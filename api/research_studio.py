@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,7 +21,7 @@ if str(BACKEND) not in sys.path:
 from app.core.config import settings
 from app.core.mongo import get_db
 
-app = FastAPI(title="Mabrig HealthOS Research & Discovery Studio", version="1.0.0")
+app = FastAPI(title="Mabrig HealthOS Research & Discovery Studio", version="1.1.0")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SERVICE_CATALOG: list[dict[str, Any]] = [
@@ -111,6 +110,7 @@ SYNERGY_FRAMEWORK = {
 class StudioAction(BaseModel):
     action: str
     service_id: str | None = None
+    reference: str | None = Field(default=None, max_length=160)
     project_title: str | None = Field(default=None, max_length=240)
     institution: str | None = Field(default=None, max_length=240)
     notes: str | None = Field(default=None, max_length=5000)
@@ -157,9 +157,13 @@ def get_service(service_id: str | None) -> dict[str, Any]:
     raise HTTPException(status_code=404, detail="Research service not found")
 
 
-def initialize_paystack(email: str, amount_kobo: int, reference: str, callback_url: str | None, metadata: dict[str, Any]) -> dict[str, Any]:
+def paystack_headers() -> dict[str, str]:
     if not settings.PAYSTACK_SECRET_KEY:
         raise HTTPException(status_code=503, detail="Paystack is not configured yet. Add PAYSTACK_SECRET_KEY in Vercel Environment Variables.")
+    return {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}", "Content-Type": "application/json"}
+
+
+def initialize_paystack(email: str, amount_kobo: int, reference: str, callback_url: str | None, metadata: dict[str, Any]) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "email": email,
         "amount": amount_kobo,
@@ -173,7 +177,7 @@ def initialize_paystack(email: str, amount_kobo: int, reference: str, callback_u
         response = httpx.post(
             f"{settings.PAYSTACK_BASE_URL}/transaction/initialize",
             json=payload,
-            headers={"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}", "Content-Type": "application/json"},
+            headers=paystack_headers(),
             timeout=25,
         )
         response.raise_for_status()
@@ -182,6 +186,22 @@ def initialize_paystack(email: str, amount_kobo: int, reference: str, callback_u
         raise HTTPException(status_code=502, detail=f"Payment gateway request failed: {exc}")
     if not data.get("status"):
         raise HTTPException(status_code=502, detail=data.get("message") or "Payment initialization failed")
+    return data["data"]
+
+
+def verify_paystack(reference: str) -> dict[str, Any]:
+    try:
+        response = httpx.get(
+            f"{settings.PAYSTACK_BASE_URL}/transaction/verify/{reference}",
+            headers=paystack_headers(),
+            timeout=25,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Payment verification failed: {exc}")
+    if not data.get("status"):
+        raise HTTPException(status_code=502, detail=data.get("message") or "Payment verification failed")
     return data["data"]
 
 
@@ -261,6 +281,32 @@ def studio_action(body: StudioAction, request: Request):
             "access_code": paystack.get("access_code"),
             "reference": paystack.get("reference", order_id),
         }
+
+    if body.action == "verify_order":
+        if not body.reference:
+            raise HTTPException(status_code=422, detail="Payment reference is required")
+        order = db.research_service_orders.find_one({"_id": body.reference, "user_id": user_id})
+        if not order:
+            raise HTTPException(status_code=404, detail="Research service order not found")
+        payment = verify_paystack(body.reference)
+        paid = payment.get("status") == "success"
+        amount_matches = int(payment.get("amount", -1)) == int(order.get("amount_kobo", -2))
+        currency_matches = payment.get("currency") == order.get("currency", "NGN")
+        customer = payment.get("customer") or {}
+        email_matches = str(customer.get("email", "")).lower() == str(user.get("email", "")).lower()
+        if not (paid and amount_matches and currency_matches and email_matches):
+            raise HTTPException(status_code=409, detail="Payment could not be matched securely to this research order")
+        db.research_service_orders.update_one(
+            {"_id": body.reference, "user_id": user_id},
+            {"$set": {
+                "payment_status": "paid",
+                "status": "intake",
+                "paid_at": payment.get("paid_at"),
+                "gateway_response": payment.get("gateway_response"),
+                "updated_at": now(),
+            }},
+        )
+        return {"order_id": body.reference, "payment_status": "paid", "status": "intake", "message": "Payment verified. Your research service project is now active."}
 
     if body.action == "create_synergy_project":
         plants = [p.strip() for p in body.plants if p.strip()]
