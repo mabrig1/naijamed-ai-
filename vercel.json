@@ -10,7 +10,7 @@
   "rewrites": [
     { "source": "/api/research-studio", "destination": "/api/research_studio" },
     { "source": "/api/research-commerce", "destination": "/api/research_commerce" },
-    { "source": "/api/research-commerce/paystack-webhook", "destination": "/api/research_commerce/paystack_webhook" },
+    { "source": "/api/research-commerce/paystack-webhook", "destination": "/api/research_commerce_webhook" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
