@@ -8,6 +8,7 @@ interface NavItem {
 }
 
 const PRIMARY_NAV: NavItem[] = [
+  { to: "/discovery", label: "🧪 Discovery" },
   { to: "/research-studio", label: "🧬 Research Studio" },
   { to: "/research", label: "📊 Research" },
   { to: "/herbs", label: "🌿 Herb Data" },
@@ -77,8 +78,10 @@ export function StatusBadge({ status }: { status: string }) {
     high: "badge-red",
     medium: "badge-gold",
     low: "badge-gray",
+    ready_for_worker: "badge-blue",
+    hypothesis_generating: "badge-gold",
   };
-  return <span className={map[status] ?? "badge-gray"}>{status}</span>;
+  return <span className={map[status] ?? "badge-gray"}>{status.replaceAll("_", " ")}</span>;
 }
 
 export function ProgressBar({ value, max = 100, label }: { value: number; max?: number; label?: string }) {
@@ -192,6 +195,7 @@ export default function Layout() {
                         <div className="text-sm font-semibold">{user.full_name}</div>
                         <div className="truncate text-xs text-gray-500">{user.email}</div>
                       </div>
+                      <Link to="/discovery" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧪 Discovery Workbench</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
                       <Link to="/dashboard" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📊 Dashboard</Link>
                       <button type="button" onClick={handleLogout} className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">🚪 Sign out</button>
@@ -252,6 +256,7 @@ export default function Layout() {
           <div>
             <h4 className="font-semibold text-white">Discovery Pipeline</h4>
             <div className="mt-3 space-y-2 text-sm">
+              <Link className="block hover:text-gold-300" to="/discovery">Discovery Workbench</Link>
               <Link className="block hover:text-gold-300" to="/herbs">Herb Data</Link>
               <Link className="block hover:text-gold-300" to="/formulations">Formulations</Link>
               <Link className="block hover:text-gold-300" to="/compliance">Regulatory Tools</Link>
