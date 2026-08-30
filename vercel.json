@@ -1,10 +1,24 @@
 {
-  "buildCommand": "npm --prefix frontend install && npm --prefix frontend run build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm --prefix frontend ci && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "{backend/alembic/**,backend/app/models/**,backend/app/routers/**,backend/app/seeds/**,backend/app/services/**,backend/tests/**,frontend/**,shared/**,docker-compose.yml}"
+    }
+  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [

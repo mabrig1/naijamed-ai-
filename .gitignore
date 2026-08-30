@@ -6,6 +6,9 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Vercel
+.vercel/
+
 # Build outputs
 dist/
 build/
@@ -30,9 +33,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
-
-# Docker volumes
-postgres_data/
 
 # Python caches
 .pytest_cache/
