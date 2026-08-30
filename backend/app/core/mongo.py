@@ -35,4 +35,11 @@ def get_db() -> Database:
     db.clinical_cases.create_index([("assigned_doctor_id", ASCENDING), ("created_at", DESCENDING)], name="ix_case_doctor")
     db.clinical_consultations.create_index([("payment_reference", ASCENDING)], unique=True, sparse=True, name="uq_consultation_payment")
     db.clinical_audit_logs.create_index([("case_id", ASCENDING), ("created_at", DESCENDING)], name="ix_audit_case")
+
+    # Research & Discovery Studio
+    db.research_service_orders.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_research_orders_user")
+    db.research_service_orders.create_index([("payment_status", ASCENDING), ("created_at", DESCENDING)], name="ix_research_orders_payment")
+    db.research_service_orders.create_index([("service_id", ASCENDING), ("created_at", DESCENDING)], name="ix_research_orders_service")
+    db.polyherbal_synergy_projects.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_synergy_projects_user")
+    db.polyherbal_synergy_projects.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_synergy_projects_status")
     return db
