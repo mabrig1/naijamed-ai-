@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 # Reuse the agent modules under backend/app without importing the legacy SQL stack.
 ROOT = Path(__file__).resolve().parents[1]
@@ -466,6 +467,143 @@ async def analyze_media(file: UploadFile = File(...), context: str | None = Form
 async def transcribe(file: UploadFile = File(...), language_hint: str | None = Form(default=None), _: dict[str, Any] = Depends(current_user)):
     data = await file.read()
     return transcribe_audio(file.filename or "audio.webm", data, file.content_type or "application/octet-stream", language_hint)
+
+
+
+# -------------------------- Formulary ---------------------------------------
+
+FORMULARY_ALLOWED_ROLES = {"researcher", "doctor", "clinic", "admin"}
+
+
+def _formulary_require_user(user: dict[str, Any]) -> dict[str, Any]:
+    if str(user.get("role")) not in FORMULARY_ALLOWED_ROLES:
+        raise HTTPException(
+            status_code=403,
+            detail="Formulary is available to researcher, doctor, clinic and administrator accounts.",
+        )
+    return user
+
+
+def _formulary_is_pro(user_id: str) -> bool:
+    return bool(
+        get_db().clinical_subscriptions.find_one(
+            {
+                "user_id": user_id,
+                "plan_id": "formulary_student",
+                "status": {"$in": ["active", "renewing"]},
+            }
+        )
+    )
+
+
+def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
+    user_id = str(user["_id"])
+    pro = user.get("role") == "admin" or _formulary_is_pro(user_id)
+    review_count = get_db().formulary_reviews.count_documents({"user_id": user_id})
+    paper_count = get_db().formulary_entries.count_documents({"user_id": user_id})
+    return {
+        "plan": "formulary_student" if pro else "free",
+        "is_pro": pro,
+        "review_count": review_count,
+        "paper_count": paper_count,
+        "review_limit": None if pro else settings.FORMULARY_FREE_REVIEW_LIMIT,
+        "paper_limit": None if pro else settings.FORMULARY_FREE_PAPER_LIMIT,
+        "upgrade_path": "/pricing",
+    }
+
+
+def _formulary_enforce_limit(user: dict[str, Any], resource: str) -> None:
+    user_id = str(user["_id"])
+    if user.get("role") == "admin" or _formulary_is_pro(user_id):
+        return
+    db = get_db()
+    if resource == "review":
+        used = db.formulary_reviews.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_REVIEW_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_REVIEW_LIMIT} living reviews. Upgrade to Formulary Scholar for unlimited reviews.",
+            )
+    if resource == "paper":
+        used = db.formulary_entries.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_PAPER_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_PAPER_LIMIT} papers. Upgrade to Formulary Scholar for unlimited evidence entries.",
+            )
+
+
+def _formulary_review(review_id: str, user: dict[str, Any]) -> dict[str, Any]:
+    row = get_db().formulary_reviews.find_one({"_id": review_id, "user_id": str(user["_id"])})
+    if not row:
+        raise HTTPException(status_code=404, detail="Living literature review not found")
+    return row
+
+
+def _clean_doi(value: str) -> str:
+    doi = value.strip()
+    doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", doi, flags=re.I)
+    doi = re.sub(r"^doi:\s*", "", doi, flags=re.I)
+    if "/" not in doi or len(doi) < 5:
+        raise HTTPException(status_code=422, detail="Enter a valid DOI")
+    return doi
+
+
+def _strip_markup(value: str | None) -> str:
+    if not value:
+        return ""
+    cleaned = re.sub(r"<[^>]+>", " ", value)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _crossref_lookup(doi: str) -> dict[str, Any] | None:
+    headers = {"User-Agent": "NigerFlora-Formulary/1.0"}
+    params: dict[str, Any] = {}
+    if settings.CROSSREF_MAILTO:
+        params["mailto"] = settings.CROSSREF_MAILTO
+    try:
+        response = httpx.get(
+            f"https://api.crossref.org/works/{quote(doi, safe='')}",
+            params=params,
+            headers=headers,
+            timeout=20,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return payload.get("message") or None
+    except (httpx.HTTPError, ValueError):
+        return None
+
+
+def _openalex_params() -> dict[str, str]:
+    return {"api_key": settings.OPENALEX_API_KEY} if settings.OPENALEX_API_KEY else {}
+
+
+def _openalex_lookup(doi: str) -> dict[str, Any] | None:
+    params: dict[str, Any] = {
+        "filter": f"doi:https://doi.org/{doi}",
+        "per_page": 1,
+        "select": "id,doi,display_name,publication_date,cited_by_count,authorships,primary_location,abstract_inverted_index,type",
+        **_openalex_params(),
+    }
+    try:
+        response = httpx.get("https://api.openalex.org/works", params=params, timeout=20)
+        response.raise_for_status()
+        rows = (response.json() or {}).get("results") or []
+        return rows[0] if rows else None
+    except (httpx.HTTPError, ValueError):
+        return None
+
+
+def _openalex_abstract(work: dict[str, Any] | None) -> str:
+    inverted = (work or {}).get("abstract_inverted_index") or {}
+    positions: list[tuple[int, str]] = []
+    for token, indexes in inverted.items():
+        for index in indexes or []:
+            if isinstance(index, int):
+                positions.append((index, token))
+    positions.sort(key=lambda item: item[0])
+    return " ".join(token for _, token in positions)
 
 
 # -------------------------- monetization ------------------------------------
