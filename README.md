@@ -47,6 +47,24 @@ Patient / Researcher / Doctor / Clinic
 | Low-bandwidth | Africa's Talking SMS / USSD |
 | Maps | OpenStreetMap/Nominatim + internal verified-provider registry |
 
+## Monetization
+
+Public pricing: `/pricing`
+
+Recurring clinical revenue is built around a **Family Health Pass (₦5,000/month)** and **Doctor Workspace (₦15,000/month)** using Paystack subscriptions. Verified doctor consultations use provider-set fees with a configurable platform commission, while the existing bioinformatics storefront remains the high-ticket research-services lane.
+
+Production subscription variables:
+
+```dotenv
+FAMILY_PASS_MONTHLY_KOBO=500000
+FAMILY_PASS_PAYSTACK_PLAN_CODE=PLN_...
+DOCTOR_WORKSPACE_MONTHLY_KOBO=1500000
+DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE=PLN_...
+CONSULT_PLATFORM_FEE_PERCENT=18
+```
+
+See `docs/MONETIZATION_LAUNCH.md` for the complete activation and test checklist.
+
 ## Research & Discovery Studio
 
 NigerFlora includes a monetizable research-services layer for:
