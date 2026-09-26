@@ -10,6 +10,7 @@ type Summary = {
     active_total: number;
     family_pass_active: number;
     doctor_workspace_active: number;
+    formulary_student_active: number;
     mrr_ngn_kobo: number;
   };
   consultations: {
@@ -73,11 +74,12 @@ export default function MonetizationAdmin() {
 
       <section>
         <h2 className="mb-4 text-xl font-bold text-forest-800">Recurring revenue</h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="card"><div className="text-sm text-gray-500">Monthly recurring revenue</div><div className="mt-2 text-3xl font-bold text-forest-800">{naira(summary.subscriptions.mrr_ngn_kobo)}</div></div>
           <div className="card"><div className="text-sm text-gray-500">Active subscriptions</div><div className="mt-2 text-3xl font-bold">{summary.subscriptions.active_total}</div></div>
           <div className="card"><div className="text-sm text-gray-500">Family Health Pass</div><div className="mt-2 text-3xl font-bold">{summary.subscriptions.family_pass_active}</div></div>
           <div className="card"><div className="text-sm text-gray-500">Doctor Workspace</div><div className="mt-2 text-3xl font-bold">{summary.subscriptions.doctor_workspace_active}</div></div>
+          <div className="card"><div className="text-sm text-gray-500">Formulary Scholar</div><div className="mt-2 text-3xl font-bold">{summary.subscriptions.formulary_student_active}</div></div>
         </div>
       </section>
 
