@@ -65,6 +65,16 @@ CONSULT_PLATFORM_FEE_PERCENT=18
 
 See `docs/MONETIZATION_LAUNCH.md` for the complete activation and test checklist.
 
+## Formulary
+
+Formulary is the postgraduate pharmaceutical research workspace inside NigerFlora. Its first production MVP is a **Living Literature Review** that converts DOI metadata and authorized PDF uploads into structured pharmaceutical evidence tables, preserves researcher corrections with provenance, and refreshes incoming citations through OpenAlex.
+
+Route: `/formulary`
+
+Default commercial tier: **Formulary Scholar — ₦8,000/month**, configurable through environment variables.
+
+See `docs/FORMULARY_MVP.md` for architecture, research-integrity rules and rollout metrics.
+
 ## Research & Discovery Studio
 
 NigerFlora includes a monetizable research-services layer for:
