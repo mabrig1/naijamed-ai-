@@ -606,6 +606,208 @@ def _openalex_abstract(work: dict[str, Any] | None) -> str:
     return " ".join(token for _, token in positions)
 
 
+
+def _crossref_authors(work: dict[str, Any] | None) -> list[str]:
+    authors: list[str] = []
+    for author in (work or {}).get("author") or []:
+        name = " ".join(part for part in [author.get("given"), author.get("family")] if part)
+        if name:
+            authors.append(name)
+    return authors
+
+
+def _publication_date(work: dict[str, Any] | None) -> str | None:
+    if not work:
+        return None
+    for key in ("published-print", "published-online", "published", "issued"):
+        parts = (((work.get(key) or {}).get("date-parts") or [[None]])[0])
+        values = [str(value) for value in parts if value is not None]
+        if values:
+            return "-".join(values)
+    return None
+
+
+def _heuristic_pharma_extract(text: str, title: str | None = None) -> dict[str, Any]:
+    sample_patterns = re.findall(r"\b(?:n|N)\s*=\s*(\d{1,6})\b", text)
+    p_values = re.findall(r"\bp\s*(?:<|>|=|≤|≥)\s*0?\.\d+\b", text, flags=re.I)
+    doses = re.findall(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|ug|g)(?:\s*/\s*kg)?\b", text, flags=re.I)
+    return {
+        "article_title": title,
+        "study_design": None,
+        "population": None,
+        "sample_size": int(sample_patterns[0]) if sample_patterns else None,
+        "intervention": None,
+        "comparator": None,
+        "dosing_regimen": sorted(set(doses))[:20],
+        "primary_endpoints": [],
+        "p_values": sorted(set(p_values))[:30],
+        "confidence_intervals": [],
+        "adverse_events": [],
+        "pk_parameters": {
+            "auc": [],
+            "cmax": [],
+            "tmax": [],
+            "half_life": [],
+            "clearance": [],
+            "volume_of_distribution": [],
+            "bioavailability": [],
+        },
+        "key_findings": [],
+        "limitations": [],
+        "evidence_spans": [],
+    }
+
+
+def _parse_model_json(raw: str) -> dict[str, Any]:
+    cleaned = raw.strip()
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start >= 0 and end > start:
+        cleaned = cleaned[start : end + 1]
+    value = json.loads(cleaned)
+    if not isinstance(value, dict):
+        raise ValueError("Model response was not a JSON object")
+    return value
+
+
+def _formulary_ai_extract(text: str, metadata: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    baseline = _heuristic_pharma_extract(text, metadata.get("title"))
+    if not settings.effective_gemini_key or len(text.strip()) < 80:
+        return baseline, "heuristic"
+
+    try:
+        import google.generativeai as genai
+
+        genai.configure(api_key=settings.effective_gemini_key)
+        model_name = settings.FORMULARY_LLM_MODEL or settings.CLINICAL_LLM_MODEL
+        model = genai.GenerativeModel(model_name)
+        source = text[:50_000]
+        prompt = f"""
+You are Formulary, a pharmaceutical evidence-extraction engine for postgraduate research.
+Extract ONLY information supported by the supplied source. Never invent missing values.
+Do not provide patient-specific medical advice.
+
+Metadata:
+{json.dumps(metadata, ensure_ascii=False)}
+
+Source:
+{source}
+
+Return ONLY valid JSON with exactly these top-level keys:
+article_title, study_design, population, sample_size, intervention, comparator,
+dosing_regimen, primary_endpoints, p_values, confidence_intervals, adverse_events,
+pk_parameters, key_findings, limitations, evidence_spans.
+
+pk_parameters must contain: auc, cmax, tmax, half_life, clearance,
+volume_of_distribution, bioavailability. Use arrays when multiple values exist.
+evidence_spans must be an array of objects with field, page, snippet. Keep every
+snippet under 240 characters and use it only as provenance for an extracted field.
+If a value is not present, use null or [] rather than guessing.
+"""
+        response = model.generate_content(prompt)
+        extracted = _parse_model_json(getattr(response, "text", "") or "")
+        return extracted, f"gemini:{model_name}"
+    except Exception:
+        return baseline, "heuristic_fallback"
+
+
+def _pdf_text(data: bytes) -> tuple[str, int]:
+    if len(data) > settings.FORMULARY_PDF_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="PDF exceeds the Formulary upload limit")
+    try:
+        from io import BytesIO
+        from pypdf import PdfReader
+
+        reader = PdfReader(BytesIO(data))
+        chunks: list[str] = []
+        for index, page in enumerate(reader.pages[:120], start=1):
+            page_text = (page.extract_text() or "").strip()
+            if page_text:
+                chunks.append(f"[PAGE {index}]\n{page_text}")
+        text = "\n\n".join(chunks)
+        if len(text.strip()) < 80:
+            raise HTTPException(status_code=422, detail="No usable text could be extracted from this PDF")
+        return text, len(reader.pages)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not parse PDF: {exc}")
+
+
+def _entry_public(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": row["_id"],
+        "review_id": row["review_id"],
+        "source_type": row.get("source_type"),
+        "doi": row.get("doi"),
+        "title": row.get("title"),
+        "journal": row.get("journal"),
+        "authors": row.get("authors", []),
+        "published": row.get("published"),
+        "openalex_id": row.get("openalex_id"),
+        "cited_by_count": row.get("cited_by_count", 0),
+        "extraction": row.get("extraction", {}),
+        "extraction_method": row.get("extraction_method"),
+        "corrections": row.get("corrections", []),
+        "citation_watch": row.get("citation_watch", []),
+        "citation_watch_last_checked": row.get("citation_watch_last_checked").isoformat() if row.get("citation_watch_last_checked") else None,
+        "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+        "updated_at": row.get("updated_at").isoformat() if row.get("updated_at") else None,
+    }
+
+
+def _set_nested(target: dict[str, Any], path: str, value: Any) -> None:
+    parts = [part for part in path.split(".") if part]
+    if not parts or len(parts) > 5:
+        raise HTTPException(status_code=422, detail="Invalid correction field path")
+    current = target
+    for part in parts[:-1]:
+        child = current.get(part)
+        if not isinstance(child, dict):
+            child = {}
+            current[part] = child
+        current = child
+    current[parts[-1]] = value
+
+
+def _openalex_citations(openalex_id: str) -> list[dict[str, Any]]:
+    work_id = openalex_id.rsplit("/", 1)[-1]
+    params: dict[str, Any] = {
+        "filter": f"cites:{work_id}",
+        "sort": "publication_date:desc",
+        "per_page": 25,
+        "select": "id,doi,display_name,publication_date,cited_by_count,authorships,primary_location",
+        **_openalex_params(),
+    }
+    try:
+        response = httpx.get("https://api.openalex.org/works", params=params, timeout=25)
+        response.raise_for_status()
+        rows = (response.json() or {}).get("results") or []
+    except (httpx.HTTPError, ValueError):
+        return []
+
+    output: list[dict[str, Any]] = []
+    for row in rows:
+        authors = []
+        for authorship in row.get("authorships") or []:
+            name = ((authorship.get("author") or {}).get("display_name") or "").strip()
+            if name:
+                authors.append(name)
+        source = (((row.get("primary_location") or {}).get("source") or {}).get("display_name"))
+        output.append(
+            {
+                "openalex_id": row.get("id"),
+                "doi": row.get("doi"),
+                "title": row.get("display_name"),
+                "published": row.get("publication_date"),
+                "authors": authors[:12],
+                "journal": source,
+                "cited_by_count": row.get("cited_by_count", 0),
+            }
+        )
+    return output
+
+
 # -------------------------- monetization ------------------------------------
 
 
