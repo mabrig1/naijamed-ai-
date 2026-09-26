@@ -679,6 +679,54 @@ def verify_subscription(reference: str, user: dict[str, Any] = Depends(current_u
     }
 
 
+@app.get("/api/admin/monetization/summary")
+def monetization_summary(_: dict[str, Any] = Depends(admin_user)):
+    db = get_db()
+    month_start = _now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    active_subscriptions = list(db.clinical_subscriptions.find({"status": {"$in": ["active", "renewing"]}}))
+    family_active = sum(1 for row in active_subscriptions if row.get("plan_id") == "family_pass")
+    doctor_active = sum(1 for row in active_subscriptions if row.get("plan_id") == "doctor_workspace")
+    mrr_kobo = sum(int(row.get("price_kobo") or 0) for row in active_subscriptions)
+
+    paid_consultations = list(
+        db.clinical_consultations.find({"payment_status": "paid", "created_at": {"$gte": month_start}})
+    )
+    consultation_gmv_kobo = sum(int(row.get("amount_kobo") or 0) for row in paid_consultations)
+    platform_fees_kobo = sum(int(row.get("platform_fee_kobo") or 0) for row in paid_consultations)
+
+    paid_research_orders = list(
+        db.research_commerce_orders.find({"payment_status": "paid", "paid_at": {"$gte": month_start}})
+    )
+    research_revenue: dict[str, float] = {}
+    for row in paid_research_orders:
+        currency = str(row.get("currency") or "NGN").upper()
+        research_revenue[currency] = research_revenue.get(currency, 0) + float(row.get("amount_major") or 0)
+
+    pending_research_leads = db.research_sales_leads.count_documents({"status": "new"})
+
+    return {
+        "period": month_start.strftime("%Y-%m"),
+        "subscriptions": {
+            "active_total": len(active_subscriptions),
+            "family_pass_active": family_active,
+            "doctor_workspace_active": doctor_active,
+            "mrr_ngn_kobo": mrr_kobo,
+        },
+        "consultations": {
+            "paid_this_month": len(paid_consultations),
+            "gmv_ngn_kobo": consultation_gmv_kobo,
+            "platform_fees_ngn_kobo": platform_fees_kobo,
+            "commission_percent": settings.CONSULT_PLATFORM_FEE_PERCENT,
+        },
+        "research_services": {
+            "paid_orders_this_month": len(paid_research_orders),
+            "revenue_by_currency": research_revenue,
+            "new_leads": pending_research_leads,
+        },
+    }
+
+
 @app.post("/api/clinical/consultations/checkout", status_code=201)
 def consultation_checkout(body: ConsultationCheckoutRequest, user: dict[str, Any] = Depends(current_user)):
     db = get_db()
