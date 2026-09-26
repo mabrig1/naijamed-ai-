@@ -10,6 +10,8 @@ const FEATURES = [
 ];
 
 const REVENUE = [
+  ["Family Health Pass", "₦5,000 / month"],
+  ["Doctor Workspace", "₦15,000 / month"],
   ["Scope Consultation", "₦25,000 / $39"],
   ["ADMET Screening", "From ₦75,000 / $110"],
   ["Network Pharmacology", "From ₦120,000 / $180"],
@@ -29,7 +31,8 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/pricing" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Plans & Pricing</Link>\n          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 md:block">Bioinformatics Services</Link>
+          <Link to="/pricing" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Plans & Pricing</Link>
+          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 md:block">Bioinformatics Services</Link>
           <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Sign In</Link>
           <Link to="/register" className="btn-secondary px-4 py-2 text-sm">Get Started</Link>
         </div>
@@ -48,7 +51,8 @@ export default function Landing() {
               NigerFlora BioSciences combines responsible AI health workflows with paid bioinformatics consulting for M.Sc., Ph.D., research groups and academic departments.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link to="/pricing" className="btn-secondary px-8 py-3 text-center text-base">View Plans & Pricing →</Link>\n              <Link to="/bioinformatics-services" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Order Research Analysis</Link>
+              <Link to="/pricing" className="btn-secondary px-8 py-3 text-center text-base">View Plans & Pricing →</Link>
+              <Link to="/bioinformatics-services" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Order Research Analysis</Link>
               <Link to="/register" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Create Free Account</Link>
               <Link to="/research-studio" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Research Studio</Link>
             </div>
