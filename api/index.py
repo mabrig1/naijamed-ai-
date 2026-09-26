@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -105,8 +106,30 @@ class ConsultationCheckoutRequest(BaseModel):
 
 
 class SubscriptionCheckoutRequest(BaseModel):
-    plan_id: Literal["family_pass", "doctor_workspace"]
+    plan_id: Literal["family_pass", "doctor_workspace", "formulary_student"]
     callback_url: str | None = None
+
+
+class FormularyReviewCreate(BaseModel):
+    title: str = Field(min_length=3, max_length=240)
+    research_question: str = Field(min_length=3, max_length=2000)
+    inclusion_criteria: str | None = Field(default=None, max_length=4000)
+    exclusion_criteria: str | None = Field(default=None, max_length=4000)
+    consent_to_model_improvement: bool = False
+
+
+class FormularyDoiRequest(BaseModel):
+    doi: str = Field(min_length=5, max_length=300)
+
+
+class FormularyCorrectionRequest(BaseModel):
+    field_path: str = Field(min_length=1, max_length=160)
+    value: Any
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class FormularyCitationRefreshRequest(BaseModel):
+    entry_id: str | None = Field(default=None, max_length=120)
 
 
 class SMSRequest(BaseModel):
@@ -504,6 +527,21 @@ def _clinical_plan_catalog() -> dict[str, dict[str, Any]]:
                 "Provider profile, fee setup and paid consultation workflow",
             ],
         },
+        "formulary_student": {
+            "id": "formulary_student",
+            "label": "Formulary Scholar",
+            "audience": "PharmD, M.Sc., Ph.D. & residents",
+            "price_kobo": settings.FORMULARY_STUDENT_MONTHLY_KOBO,
+            "billing": "monthly",
+            "paystack_plan_code": settings.FORMULARY_STUDENT_PAYSTACK_PLAN_CODE or None,
+            "allowed_roles": ["researcher", "doctor", "clinic", "admin"],
+            "features": [
+                "Unlimited living literature reviews",
+                "DOI and PDF pharmaceutical data extraction",
+                "Field-level correction provenance and evidence tables",
+                "OpenAlex citation-watch refresh for included papers",
+            ],
+        },
     }
 
 
@@ -513,6 +551,8 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
         entitlements.update({"family_history", "priority_handoff", "voice_capture", "care_summary_exports"})
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
+    if "formulary_student" in active_plan_ids:
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction"})
     return sorted(entitlements)
 
 
@@ -541,7 +581,7 @@ def plans():
                 "Verified provider discovery",
             ],
         },
-        "subscriptions": [catalog["family_pass"], catalog["doctor_workspace"]],
+        "subscriptions": [catalog["family_pass"], catalog["doctor_workspace"], catalog["formulary_student"]],
         "consultations": {
             "label": "Doctor consultations",
             "pricing": "provider-set",
@@ -687,6 +727,7 @@ def monetization_summary(_: dict[str, Any] = Depends(admin_user)):
     active_subscriptions = list(db.clinical_subscriptions.find({"status": {"$in": ["active", "renewing"]}}))
     family_active = sum(1 for row in active_subscriptions if row.get("plan_id") == "family_pass")
     doctor_active = sum(1 for row in active_subscriptions if row.get("plan_id") == "doctor_workspace")
+    formulary_active = sum(1 for row in active_subscriptions if row.get("plan_id") == "formulary_student")
     mrr_kobo = sum(int(row.get("price_kobo") or 0) for row in active_subscriptions)
 
     paid_consultations = list(
@@ -711,6 +752,7 @@ def monetization_summary(_: dict[str, Any] = Depends(admin_user)):
             "active_total": len(active_subscriptions),
             "family_pass_active": family_active,
             "doctor_workspace_active": doctor_active,
+            "formulary_student_active": formulary_active,
             "mrr_ngn_kobo": mrr_kobo,
         },
         "consultations": {
