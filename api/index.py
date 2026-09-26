@@ -690,7 +690,7 @@ def monetization_summary(_: dict[str, Any] = Depends(admin_user)):
     mrr_kobo = sum(int(row.get("price_kobo") or 0) for row in active_subscriptions)
 
     paid_consultations = list(
-        db.clinical_consultations.find({"payment_status": "paid", "created_at": {"$gte": month_start}})
+        db.clinical_consultations.find({"payment_status": "paid", "paid_at": {"$gte": month_start}})
     )
     consultation_gmv_kobo = sum(int(row.get("amount_kobo") or 0) for row in paid_consultations)
     platform_fees_kobo = sum(int(row.get("platform_fee_kobo") or 0) for row in paid_consultations)
@@ -742,24 +742,30 @@ def consultation_checkout(body: ConsultationCheckoutRequest, user: dict[str, Any
         raise HTTPException(status_code=409, detail="Provider has not configured a consultation fee")
     platform_fee = round(amount * settings.CONSULT_PLATFORM_FEE_PERCENT / 100)
     consultation_id = str(uuid.uuid4())
-    payment = _paystack_post(
-        "/transaction/initialize",
-        {
-            "email": user["email"],
-            "amount": amount,
-            "currency": "NGN",
-            "callback_url": body.callback_url or settings.FRONTEND_URL,
-            "metadata": {
-                "product": "mabrig_healthos_consultation",
-                "consultation_id": consultation_id,
-                "case_id": body.case_id,
-                "patient_user_id": user_id,
-                "provider_user_id": body.provider_user_id,
-                "platform_fee_kobo": platform_fee,
-                "provider_net_kobo": amount - platform_fee,
-            },
+    subaccount_code = str(provider.get("paystack_subaccount_code") or "").strip()
+    payment_payload: dict[str, Any] = {
+        "email": user["email"],
+        "amount": amount,
+        "currency": "NGN",
+        "callback_url": body.callback_url or settings.FRONTEND_URL,
+        "metadata": {
+            "product": "mabrig_healthos_consultation",
+            "consultation_id": consultation_id,
+            "case_id": body.case_id,
+            "patient_user_id": user_id,
+            "provider_user_id": body.provider_user_id,
+            "platform_fee_kobo": platform_fee,
+            "provider_net_kobo": amount - platform_fee,
+            "settlement_mode": "paystack_subaccount" if subaccount_code else "manual",
         },
-    )
+    }
+    if subaccount_code:
+        # Paystack split settlement: route the provider share to the verified
+        # provider's subaccount while retaining the configured platform charge.
+        payment_payload["subaccount"] = subaccount_code
+        payment_payload["transaction_charge"] = platform_fee
+
+    payment = _paystack_post("/transaction/initialize", payment_payload)
     if not payment.get("status"):
         raise HTTPException(status_code=502, detail="Payment initialization failed")
     inner = payment["data"]
@@ -772,6 +778,8 @@ def consultation_checkout(body: ConsultationCheckoutRequest, user: dict[str, Any
             "amount_kobo": amount,
             "platform_fee_kobo": platform_fee,
             "provider_net_kobo": amount - platform_fee,
+            "settlement_mode": "paystack_subaccount" if subaccount_code else "manual",
+            "provider_subaccount_code": subaccount_code or None,
             "payment_reference": inner["reference"],
             "payment_status": "pending",
             "consultation_status": "awaiting_payment",
@@ -801,6 +809,7 @@ def verify_consultation(reference: str, user: dict[str, Any] = Depends(current_u
     update = {"payment_status": payment_status}
     if paid:
         update["consultation_status"] = "ready"
+        update["paid_at"] = _now()
         db.clinical_cases.update_one({"_id": consultation["case_id"]}, {"$set": {"status": "clinician_assigned", "updated_at": _now()}})
     db.clinical_consultations.update_one({"_id": consultation["_id"]}, {"$set": update})
     return {"reference": reference, "paid": paid, "status": payment_status, "consultation_status": update.get("consultation_status", consultation.get("consultation_status"))}
@@ -825,7 +834,7 @@ async def paystack_webhook(request: Request):
         if consultation and int(data.get("amount") or 0) == int(consultation["amount_kobo"]):
             db.clinical_consultations.update_one(
                 {"_id": consultation["_id"]},
-                {"$set": {"payment_status": "paid", "consultation_status": "ready"}},
+                {"$set": {"payment_status": "paid", "consultation_status": "ready", "paid_at": _now()}},
             )
             db.clinical_cases.update_one(
                 {"_id": consultation["case_id"]},
