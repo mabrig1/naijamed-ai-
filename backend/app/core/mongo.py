@@ -62,4 +62,10 @@ def get_db() -> Database:
     db.discovery_screening_jobs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_screening_jobs_user")
     db.discovery_screening_jobs.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_screening_jobs_status")
     db.discovery_networks.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_discovery_networks_user")
+
+    # Formulary — postgraduate pharmaceutical evidence workspace
+    db.formulary_reviews.create_index([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_reviews_user")
+    db.formulary_entries.create_index([("review_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_entries_review")
+    db.formulary_entries.create_index([("user_id", ASCENDING), ("doi", ASCENDING)], sparse=True, name="ix_formulary_entries_user_doi")
+    db.formulary_entries.create_index([("openalex_id", ASCENDING)], sparse=True, name="ix_formulary_entries_openalex")
     return db
