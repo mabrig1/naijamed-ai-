@@ -57,6 +57,16 @@ class Settings(BaseSettings):
     DOCTOR_WORKSPACE_MONTHLY_KOBO: int = 1_500_000
     DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE: str = ""
 
+    # Formulary postgraduate pharmaceutical research workspace.
+    FORMULARY_STUDENT_MONTHLY_KOBO: int = 800_000
+    FORMULARY_STUDENT_PAYSTACK_PLAN_CODE: str = ""
+    FORMULARY_FREE_REVIEW_LIMIT: int = 2
+    FORMULARY_FREE_PAPER_LIMIT: int = 10
+    FORMULARY_PDF_MAX_BYTES: int = 12 * 1024 * 1024
+    FORMULARY_LLM_MODEL: str = ""
+    OPENALEX_API_KEY: str = ""
+    CROSSREF_MAILTO: str = ""
+
     FRONTEND_URL: str = "https://nigerflora.mabrigkorie.org"
     EXTRA_CORS_ORIGINS: str = "https://nigerflora-biosciences.vercel.app"
 
