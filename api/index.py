@@ -808,6 +808,275 @@ def _openalex_citations(openalex_id: str) -> list[dict[str, Any]]:
     return output
 
 
+
+@app.get("/api/formulary")
+def formulary_home(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    db = get_db()
+    rows = db.formulary_reviews.find({"user_id": str(user["_id"])}).sort("updated_at", -1).limit(100)
+    reviews = []
+    for row in rows:
+        reviews.append(
+            {
+                "id": row["_id"],
+                "title": row.get("title"),
+                "research_question": row.get("research_question"),
+                "status": row.get("status", "active"),
+                "paper_count": db.formulary_entries.count_documents({"review_id": row["_id"]}),
+                "updated_at": row.get("updated_at").isoformat() if row.get("updated_at") else None,
+            }
+        )
+    return {
+        "product": "Formulary",
+        "tagline": "The operating system for translational pharmaceutical science.",
+        "account": _formulary_account(user),
+        "reviews": reviews,
+        "mvp": {
+            "features": [
+                "DOI metadata ingestion",
+                "PDF pharmaceutical data extraction",
+                "Living evidence table",
+                "Field-level correction provenance",
+                "Citation-watch refresh through OpenAlex",
+            ],
+            "coming_next": [
+                "PK/PD Simulator",
+                "Rotation & Residency Tracker",
+                "Regulatory & Grant Copilot",
+                "Journal Club Live Room",
+            ],
+        },
+    }
+
+
+@app.post("/api/formulary/reviews", status_code=201)
+def formulary_create_review(body: FormularyReviewCreate, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "review")
+    review_id = f"FLR-{uuid.uuid4().hex[:12].upper()}"
+    row = {
+        "_id": review_id,
+        "user_id": str(user["_id"]),
+        "title": body.title.strip(),
+        "research_question": body.research_question.strip(),
+        "inclusion_criteria": body.inclusion_criteria,
+        "exclusion_criteria": body.exclusion_criteria,
+        "consent_to_model_improvement": body.consent_to_model_improvement,
+        "status": "active",
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_reviews.insert_one(row)
+    return {"id": review_id, "title": row["title"], "status": "active"}
+
+
+@app.get("/api/formulary/reviews/{review_id}")
+def formulary_review_detail(review_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    review = _formulary_review(review_id, user)
+    entries = get_db().formulary_entries.find({"review_id": review_id}).sort("created_at", -1).limit(500)
+    return {
+        "review": {
+            "id": review["_id"],
+            "title": review.get("title"),
+            "research_question": review.get("research_question"),
+            "inclusion_criteria": review.get("inclusion_criteria"),
+            "exclusion_criteria": review.get("exclusion_criteria"),
+            "consent_to_model_improvement": bool(review.get("consent_to_model_improvement", False)),
+            "status": review.get("status", "active"),
+        },
+        "entries": [_entry_public(row) for row in entries],
+        "account": _formulary_account(user),
+    }
+
+
+@app.post("/api/formulary/reviews/{review_id}/doi", status_code=201)
+def formulary_add_doi(review_id: str, body: FormularyDoiRequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    _formulary_review(review_id, user)
+    _formulary_enforce_limit(user, "paper")
+    doi = _clean_doi(body.doi)
+    db = get_db()
+    existing = db.formulary_entries.find_one({"review_id": review_id, "doi": doi})
+    if existing:
+        return _entry_public(existing)
+
+    crossref = _crossref_lookup(doi) or {}
+    openalex = _openalex_lookup(doi) or {}
+    title = ((crossref.get("title") or [None])[0] or openalex.get("display_name") or doi)
+    journal = ((crossref.get("container-title") or [None])[0] or (((openalex.get("primary_location") or {}).get("source") or {}).get("display_name")))
+    abstract = _strip_markup(crossref.get("abstract")) or _openalex_abstract(openalex)
+    metadata = {
+        "doi": doi,
+        "title": title,
+        "journal": journal,
+        "authors": _crossref_authors(crossref),
+        "published": _publication_date(crossref) or openalex.get("publication_date"),
+    }
+    extraction, extraction_method = _formulary_ai_extract(abstract, metadata)
+    entry_id = f"FPE-{uuid.uuid4().hex[:14].upper()}"
+    row = {
+        "_id": entry_id,
+        "review_id": review_id,
+        "user_id": str(user["_id"]),
+        "source_type": "doi",
+        "doi": doi,
+        "title": title,
+        "journal": journal,
+        "authors": metadata["authors"],
+        "published": metadata["published"],
+        "openalex_id": openalex.get("id"),
+        "cited_by_count": int(openalex.get("cited_by_count") or crossref.get("is-referenced-by-count") or 0),
+        "source_excerpt": abstract[:4000],
+        "extraction": extraction,
+        "extraction_method": extraction_method,
+        "corrections": [],
+        "citation_watch": [],
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    db.formulary_entries.insert_one(row)
+    db.formulary_reviews.update_one({"_id": review_id}, {"$set": {"updated_at": _now()}})
+    return _entry_public(row)
+
+
+@app.post("/api/formulary/reviews/{review_id}/pdf", status_code=201)
+async def formulary_add_pdf(
+    review_id: str,
+    file: UploadFile = File(...),
+    doi: str | None = Form(default=None),
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_review(review_id, user)
+    _formulary_enforce_limit(user, "paper")
+    if file.content_type not in {"application/pdf", "application/x-pdf", "application/octet-stream"} and not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=415, detail="Formulary currently accepts PDF articles")
+    data = await file.read()
+    text, page_count = _pdf_text(data)
+    normalized_doi = _clean_doi(doi) if doi else None
+    crossref = _crossref_lookup(normalized_doi) if normalized_doi else None
+    openalex = _openalex_lookup(normalized_doi) if normalized_doi else None
+    title = (((crossref or {}).get("title") or [None])[0] or (openalex or {}).get("display_name") or (file.filename or "Uploaded article"))
+    metadata = {
+        "doi": normalized_doi,
+        "title": title,
+        "journal": (((crossref or {}).get("container-title") or [None])[0]),
+        "authors": _crossref_authors(crossref),
+        "published": _publication_date(crossref) or (openalex or {}).get("publication_date"),
+        "page_count": page_count,
+    }
+    extraction, extraction_method = _formulary_ai_extract(text, metadata)
+    entry_id = f"FPE-{uuid.uuid4().hex[:14].upper()}"
+    row = {
+        "_id": entry_id,
+        "review_id": review_id,
+        "user_id": str(user["_id"]),
+        "source_type": "pdf",
+        "filename": file.filename,
+        "doi": normalized_doi,
+        "title": extraction.get("article_title") or title,
+        "journal": metadata["journal"],
+        "authors": metadata["authors"],
+        "published": metadata["published"],
+        "page_count": page_count,
+        "openalex_id": (openalex or {}).get("id"),
+        "cited_by_count": int((openalex or {}).get("cited_by_count") or 0),
+        "source_excerpt": text[:4000],
+        "extraction": extraction,
+        "extraction_method": extraction_method,
+        "corrections": [],
+        "citation_watch": [],
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_entries.insert_one(row)
+    get_db().formulary_reviews.update_one({"_id": review_id}, {"$set": {"updated_at": _now()}})
+    return _entry_public(row)
+
+
+@app.patch("/api/formulary/entries/{entry_id}")
+def formulary_correct_entry(entry_id: str, body: FormularyCorrectionRequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    db = get_db()
+    row = db.formulary_entries.find_one({"_id": entry_id, "user_id": str(user["_id"])})
+    if not row:
+        raise HTTPException(status_code=404, detail="Formulary evidence entry not found")
+    try:
+        serialized = json.dumps(body.value, ensure_ascii=False)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Correction value must be JSON serializable")
+    if len(serialized) > 10_000:
+        raise HTTPException(status_code=422, detail="Correction value is too large")
+
+    extraction = dict(row.get("extraction") or {})
+    old_value: Any = extraction
+    for part in body.field_path.split("."):
+        if isinstance(old_value, dict):
+            old_value = old_value.get(part)
+        else:
+            old_value = None
+            break
+    _set_nested(extraction, body.field_path, body.value)
+    correction = {
+        "field_path": body.field_path,
+        "old_value": old_value,
+        "new_value": body.value,
+        "note": body.note,
+        "corrected_by": str(user["_id"]),
+        "corrected_at": _now(),
+    }
+    db.formulary_entries.update_one(
+        {"_id": entry_id},
+        {"$set": {"extraction": extraction, "updated_at": _now()}, "$push": {"corrections": correction}},
+    )
+    updated = db.formulary_entries.find_one({"_id": entry_id})
+    return _entry_public(updated)
+
+
+@app.post("/api/formulary/reviews/{review_id}/refresh-citations")
+def formulary_refresh_citations(
+    review_id: str,
+    body: FormularyCitationRefreshRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_review(review_id, user)
+    db = get_db()
+    query: dict[str, Any] = {"review_id": review_id, "user_id": str(user["_id"])}
+    if body.entry_id:
+        query["_id"] = body.entry_id
+    rows = list(db.formulary_entries.find(query).limit(50))
+    refreshed = 0
+    new_citations = 0
+    for row in rows:
+        openalex_id = row.get("openalex_id")
+        if not openalex_id and row.get("doi"):
+            work = _openalex_lookup(row["doi"])
+            openalex_id = (work or {}).get("id")
+            if openalex_id:
+                db.formulary_entries.update_one({"_id": row["_id"]}, {"$set": {"openalex_id": openalex_id}})
+        if not openalex_id:
+            continue
+        latest = _openalex_citations(openalex_id)
+        previous_ids = {item.get("openalex_id") for item in row.get("citation_watch", []) if item.get("openalex_id")}
+        additions = [item for item in latest if item.get("openalex_id") not in previous_ids]
+        db.formulary_entries.update_one(
+            {"_id": row["_id"]},
+            {
+                "$set": {
+                    "citation_watch": latest,
+                    "citation_watch_last_checked": _now(),
+                    "updated_at": _now(),
+                }
+            },
+        )
+        refreshed += 1
+        new_citations += len(additions)
+    db.formulary_reviews.update_one({"_id": review_id}, {"$set": {"updated_at": _now()}})
+    return {"review_id": review_id, "entries_refreshed": refreshed, "new_citations": new_citations}
+
+
 # -------------------------- monetization ------------------------------------
 
 
