@@ -104,6 +104,11 @@ class ConsultationCheckoutRequest(BaseModel):
     callback_url: str | None = None
 
 
+class SubscriptionCheckoutRequest(BaseModel):
+    plan_id: Literal["family_pass", "doctor_workspace"]
+    callback_url: str | None = None
+
+
 class SMSRequest(BaseModel):
     phone_number: str = Field(min_length=7, max_length=30)
     message: str = Field(min_length=1, max_length=1000)
@@ -467,23 +472,210 @@ def _paystack_get(path: str) -> dict[str, Any]:
         raise HTTPException(status_code=502, detail="Payment provider unavailable")
 
 
+def _clinical_plan_catalog() -> dict[str, dict[str, Any]]:
+    return {
+        "family_pass": {
+            "id": "family_pass",
+            "label": "Family Health Pass",
+            "audience": "Individuals & families",
+            "price_kobo": settings.FAMILY_PASS_MONTHLY_KOBO,
+            "billing": "monthly",
+            "paystack_plan_code": settings.FAMILY_PASS_PAYSTACK_PLAN_CODE or None,
+            "allowed_roles": ["patient", "admin"],
+            "features": [
+                "Family health profile and longitudinal case history",
+                "Priority clinician handoff and consultation tracking",
+                "Voice symptom capture and secure clinical summaries",
+                "Care reminders and exportable visit summaries",
+            ],
+        },
+        "doctor_workspace": {
+            "id": "doctor_workspace",
+            "label": "Doctor Workspace",
+            "audience": "Doctors & clinics",
+            "price_kobo": settings.DOCTOR_WORKSPACE_MONTHLY_KOBO,
+            "billing": "monthly",
+            "paystack_plan_code": settings.DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE or None,
+            "allowed_roles": ["doctor", "clinic", "admin"],
+            "features": [
+                "Structured patient intake and AI-assisted SOAP preparation",
+                "Encrypted case workspace and consultation history",
+                "Clinical voice/image intake tools with audit trail",
+                "Provider profile, fee setup and paid consultation workflow",
+            ],
+        },
+    }
+
+
+def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
+    entitlements = {"free_ai_triage", "red_flag_escalation", "provider_directory"}
+    if "family_pass" in active_plan_ids:
+        entitlements.update({"family_history", "priority_handoff", "voice_capture", "care_summary_exports"})
+    if "doctor_workspace" in active_plan_ids:
+        entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
+    return sorted(entitlements)
+
+
+def _plan_from_paystack_code(plan_code: str | None) -> str | None:
+    if not plan_code:
+        return None
+    for plan_id, plan in _clinical_plan_catalog().items():
+        if plan.get("paystack_plan_code") == plan_code:
+            return plan_id
+    return None
+
+
 @app.get("/api/clinical/plans")
 def plans():
+    catalog = _clinical_plan_catalog()
     return {
         "currency": "NGN",
-        "b2c": {
-            "ai_triage": {"price_kobo": 0, "label": "Free AI triage"},
-            "family_pass": {"price_kobo": settings.FAMILY_PASS_MONTHLY_KOBO, "billing": "monthly", "paystack_plan_code": settings.FAMILY_PASS_PAYSTACK_PLAN_CODE or None},
-            "doctor_consultation": {"pricing": "provider-set", "platform_commission_percent": settings.CONSULT_PLATFORM_FEE_PERCENT},
+        "free": {
+            "id": "free",
+            "label": "Essential Care",
+            "price_kobo": 0,
+            "billing": "free",
+            "features": [
+                "AI-assisted symptom intake",
+                "Deterministic red-flag escalation",
+                "Verified provider discovery",
+            ],
         },
-        "b2b": {
-            "doctor_workspace": {"price_kobo": settings.DOCTOR_WORKSPACE_MONTHLY_KOBO, "billing": "monthly", "paystack_plan_code": settings.DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE or None},
-            "corporate_wellness": {"pricing": "custom quote"},
+        "subscriptions": [catalog["family_pass"], catalog["doctor_workspace"]],
+        "consultations": {
+            "label": "Doctor consultations",
+            "pricing": "provider-set",
+            "platform_commission_percent": settings.CONSULT_PLATFORM_FEE_PERCENT,
         },
-        "enterprise": {
-            "hmo_api": {"pricing": "contract / usage-based"},
-            "pharmacy_referrals": {"pricing": "verified fulfillment commission"},
+        "research_services_url": "/bioinformatics-services",
+        "enterprise": [
+            {"id": "corporate_wellness", "label": "Corporate / campus wellness", "pricing": "custom quote"},
+            {"id": "hmo_api", "label": "HMO / clinic API", "pricing": "contract / usage-based"},
+        ],
+    }
+
+
+@app.get("/api/clinical/subscriptions/me")
+def my_subscriptions(user: dict[str, Any] = Depends(current_user)):
+    user_id = str(user["_id"])
+    rows = list(get_db().clinical_subscriptions.find({"user_id": user_id}).sort("updated_at", -1).limit(20))
+    active_plan_ids = sorted({
+        str(row.get("plan_id"))
+        for row in rows
+        if row.get("status") in {"active", "renewing"} and row.get("plan_id")
+    })
+    return {
+        "active_plan_ids": active_plan_ids,
+        "entitlements": _subscription_entitlements(active_plan_ids),
+        "subscriptions": [
+            {
+                "id": str(row.get("_id")),
+                "plan_id": row.get("plan_id"),
+                "status": row.get("status", "pending"),
+                "payment_reference": row.get("payment_reference"),
+                "subscription_code": row.get("subscription_code"),
+                "next_payment_date": row.get("next_payment_date"),
+                "updated_at": row.get("updated_at").isoformat() if row.get("updated_at") else None,
+            }
+            for row in rows
+        ],
+    }
+
+
+@app.post("/api/clinical/subscriptions/checkout", status_code=201)
+def subscription_checkout(body: SubscriptionCheckoutRequest, user: dict[str, Any] = Depends(current_user)):
+    catalog = _clinical_plan_catalog()
+    plan = catalog[body.plan_id]
+    if user.get("role") not in plan["allowed_roles"]:
+        raise HTTPException(status_code=403, detail=f"{plan['label']} is not available for this account role")
+    plan_code = plan.get("paystack_plan_code")
+    if not plan_code:
+        raise HTTPException(
+            status_code=503,
+            detail=f"{plan['label']} checkout is not configured. Add the Paystack plan code in production environment variables.",
+        )
+
+    payment = _paystack_post(
+        "/transaction/initialize",
+        {
+            "email": user["email"],
+            "amount": int(plan["price_kobo"]),
+            "currency": "NGN",
+            "plan": plan_code,
+            "callback_url": body.callback_url or f"{settings.FRONTEND_URL}/pricing",
+            "metadata": {
+                "product": "nigerflora_clinical_subscription",
+                "plan_id": body.plan_id,
+                "user_id": str(user["_id"]),
+            },
         },
+    )
+    if not payment.get("status"):
+        raise HTTPException(status_code=502, detail="Subscription checkout could not be initialized")
+    inner = payment.get("data") or {}
+    reference = str(inner.get("reference") or "")
+    if not reference or not inner.get("authorization_url"):
+        raise HTTPException(status_code=502, detail="Payment provider did not return a checkout URL")
+
+    get_db().clinical_subscriptions.update_one(
+        {"user_id": str(user["_id"]), "plan_id": body.plan_id},
+        {
+            "$set": {
+                "user_id": str(user["_id"]),
+                "email": user["email"],
+                "plan_id": body.plan_id,
+                "plan_label": plan["label"],
+                "price_kobo": int(plan["price_kobo"]),
+                "paystack_plan_code": plan_code,
+                "payment_reference": reference,
+                "status": "pending",
+                "updated_at": _now(),
+            },
+            "$setOnInsert": {"created_at": _now()},
+        },
+        upsert=True,
+    )
+    return {
+        "plan_id": body.plan_id,
+        "authorization_url": inner["authorization_url"],
+        "reference": reference,
+        "amount_kobo": int(plan["price_kobo"]),
+    }
+
+
+@app.get("/api/clinical/subscriptions/verify/{reference}")
+def verify_subscription(reference: str, user: dict[str, Any] = Depends(current_user)):
+    db = get_db()
+    user_id = str(user["_id"])
+    record = db.clinical_subscriptions.find_one({"user_id": user_id, "payment_reference": reference})
+    if not record:
+        raise HTTPException(status_code=404, detail="Subscription checkout not found")
+
+    data = (_paystack_get(f"/transaction/verify/{reference}").get("data") or {})
+    customer = data.get("customer") or {}
+    email_matches = str(customer.get("email") or "").lower() == str(user.get("email") or "").lower()
+    amount_matches = int(data.get("amount") or 0) == int(record.get("price_kobo") or -1)
+    paid = data.get("status") == "success" and email_matches and amount_matches
+    if not paid:
+        raise HTTPException(status_code=409, detail="Subscription payment could not be matched securely to this account")
+
+    db.clinical_subscriptions.update_one(
+        {"_id": record["_id"]},
+        {
+            "$set": {
+                "status": "active",
+                "customer_code": customer.get("customer_code"),
+                "paid_at": _now(),
+                "updated_at": _now(),
+            }
+        },
+    )
+    return {
+        "reference": reference,
+        "paid": True,
+        "plan_id": record["plan_id"],
+        "status": "active",
+        "entitlements": _subscription_entitlements([str(record["plan_id"])]),
     }
 
 
@@ -573,15 +765,106 @@ async def paystack_webhook(request: Request):
     expected = hmac.new(settings.PAYSTACK_SECRET_KEY.encode(), raw, hashlib.sha512).hexdigest() if settings.PAYSTACK_SECRET_KEY else ""
     if not expected or not hmac.compare_digest(signature, expected):
         raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
     event = json.loads(raw.decode("utf-8"))
-    if event.get("event") == "charge.success":
-        data = event.get("data") or {}
+    event_name = str(event.get("event") or "")
+    data = event.get("data") or {}
+    db = get_db()
+
+    if event_name == "charge.success":
         reference = data.get("reference")
-        db = get_db()
         consultation = db.clinical_consultations.find_one({"payment_reference": reference})
         if consultation and int(data.get("amount") or 0) == int(consultation["amount_kobo"]):
-            db.clinical_consultations.update_one({"_id": consultation["_id"]}, {"$set": {"payment_status": "paid", "consultation_status": "ready"}})
-            db.clinical_cases.update_one({"_id": consultation["case_id"]}, {"$set": {"status": "clinician_assigned", "updated_at": _now()}})
+            db.clinical_consultations.update_one(
+                {"_id": consultation["_id"]},
+                {"$set": {"payment_status": "paid", "consultation_status": "ready"}},
+            )
+            db.clinical_cases.update_one(
+                {"_id": consultation["case_id"]},
+                {"$set": {"status": "clinician_assigned", "updated_at": _now()}},
+            )
+
+        metadata = data.get("metadata") or {}
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                metadata = {}
+        if metadata.get("product") == "nigerflora_clinical_subscription":
+            user_id = str(metadata.get("user_id") or "")
+            plan_id = str(metadata.get("plan_id") or "")
+            if user_id and plan_id:
+                db.clinical_subscriptions.update_one(
+                    {"user_id": user_id, "plan_id": plan_id},
+                    {
+                        "$set": {
+                            "status": "active",
+                            "payment_reference": str(reference or ""),
+                            "customer_code": (data.get("customer") or {}).get("customer_code"),
+                            "paid_at": _now(),
+                            "updated_at": _now(),
+                        }
+                    },
+                    upsert=False,
+                )
+
+    if event_name == "subscription.create":
+        customer = data.get("customer") or {}
+        plan = data.get("plan") or {}
+        plan_code = str(plan.get("plan_code") or data.get("plan_code") or "")
+        plan_id = _plan_from_paystack_code(plan_code)
+        email = str(customer.get("email") or "").lower()
+        user = db.users.find_one({"email": email}) if email else None
+        if plan_id and user:
+            db.clinical_subscriptions.update_one(
+                {"user_id": str(user["_id"]), "plan_id": plan_id},
+                {
+                    "$set": {
+                        "status": "active",
+                        "subscription_code": data.get("subscription_code"),
+                        "email_token": data.get("email_token"),
+                        "customer_code": customer.get("customer_code"),
+                        "next_payment_date": data.get("next_payment_date"),
+                        "updated_at": _now(),
+                    },
+                    "$setOnInsert": {"created_at": _now(), "email": email},
+                },
+                upsert=True,
+            )
+
+    if event_name in {"subscription.disable", "subscription.not_renew"}:
+        subscription_code = data.get("subscription_code")
+        if subscription_code:
+            db.clinical_subscriptions.update_one(
+                {"subscription_code": subscription_code},
+                {"$set": {"status": "cancelled", "updated_at": _now()}},
+            )
+
+    if event_name == "invoice.payment_failed":
+        subscription = data.get("subscription") or {}
+        subscription_code = subscription.get("subscription_code")
+        if subscription_code:
+            db.clinical_subscriptions.update_one(
+                {"subscription_code": subscription_code},
+                {"$set": {"status": "past_due", "updated_at": _now()}},
+            )
+
+    if event_name == "invoice.update":
+        subscription = data.get("subscription") or {}
+        subscription_code = subscription.get("subscription_code")
+        paid = bool(data.get("paid"))
+        if subscription_code and paid:
+            db.clinical_subscriptions.update_one(
+                {"subscription_code": subscription_code},
+                {
+                    "$set": {
+                        "status": "active",
+                        "next_payment_date": subscription.get("next_payment_date"),
+                        "updated_at": _now(),
+                    }
+                },
+            )
+
     return {"received": True}
 
 
