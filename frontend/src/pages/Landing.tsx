@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 const FEATURES = [
+  { icon: "📚", title: "Formulary", desc: "A living literature review workspace for PharmD, M.Sc., Ph.D. students and residents—DOI/PDF extraction, evidence tables and citation watch." },
   { icon: "🩺", title: "Clinical Navigation", desc: "Agentic triage, red-flag escalation, clinician handoff and structured SOAP-ready case summaries." },
   { icon: "🧬", title: "Bioinformatics Consulting", desc: "Order network pharmacology, ADMET, molecular docking, Cytoscape networks and publication-ready figures with tracked delivery." },
   { icon: "🌿", title: "Ethnobotanical Intelligence", desc: "Organize Nigerian medicinal-plant evidence, compounds, regional knowledge and discovery datasets." },
@@ -10,6 +11,7 @@ const FEATURES = [
 ];
 
 const REVENUE = [
+  ["Formulary Scholar", "₦8,000 / month"],
   ["Family Health Pass", "₦5,000 / month"],
   ["Doctor Workspace", "₦15,000 / month"],
   ["Scope Consultation", "₦25,000 / $39"],
@@ -31,7 +33,8 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/pricing" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Plans & Pricing</Link>
+          <Link to="/formulary" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Formulary</Link>
+          <Link to="/pricing" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 md:block">Plans & Pricing</Link>
           <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 md:block">Bioinformatics Services</Link>
           <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Sign In</Link>
           <Link to="/register" className="btn-secondary px-4 py-2 text-sm">Get Started</Link>
@@ -51,7 +54,8 @@ export default function Landing() {
               NigerFlora BioSciences combines responsible AI health workflows with paid bioinformatics consulting for M.Sc., Ph.D., research groups and academic departments.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link to="/pricing" className="btn-secondary px-8 py-3 text-center text-base">View Plans & Pricing →</Link>
+              <Link to="/formulary" className="btn-secondary px-8 py-3 text-center text-base">Open Formulary →</Link>
+              <Link to="/pricing" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Plans & Pricing</Link>
               <Link to="/bioinformatics-services" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Order Research Analysis</Link>
               <Link to="/register" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Create Free Account</Link>
               <Link to="/research-studio" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Research Studio</Link>
