@@ -195,7 +195,8 @@ export default function Layout() {
                         <div className="text-sm font-semibold">{user.full_name}</div>
                         <div className="truncate text-xs text-gray-500">{user.email}</div>
                       </div>
-                      <Link to="/pricing" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💳 Plans & Billing</Link>\n                      <Link to="/bioinformatics-services" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💼 Order Bioinformatics Analysis</Link>
+                      <Link to="/pricing" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💳 Plans & Billing</Link>
+                      <Link to="/bioinformatics-services" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💼 Order Bioinformatics Analysis</Link>
                       <Link to="/discovery" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧪 Discovery Workbench</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
                       {String(user.role) === "admin" && <Link to="/research-commerce/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">💰 Research Commerce Admin</Link>}
@@ -236,7 +237,8 @@ export default function Layout() {
           <div>
             <h4 className="font-semibold text-white">Research Revenue</h4>
             <div className="mt-3 space-y-2 text-sm">
-              <Link className="block font-semibold text-gold-300 hover:text-white" to="/pricing">Plans & Pricing</Link>\n              <Link className="block hover:text-gold-300" to="/bioinformatics-services">Order Bioinformatics Services</Link>
+              <Link className="block font-semibold text-gold-300 hover:text-white" to="/pricing">Plans & Pricing</Link>
+              <Link className="block hover:text-gold-300" to="/bioinformatics-services">Order Bioinformatics Services</Link>
               <Link className="block hover:text-gold-300" to="/research-studio">Research Studio</Link>
               <Link className="block hover:text-gold-300" to="/research-studio">Grant & Proposal Support</Link>
             </div>
