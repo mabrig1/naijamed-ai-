@@ -124,7 +124,7 @@ function downloadCsv(reviewTitle: string, entries: Entry[]) {
     compact(entry.extraction.adverse_events),
     entry.cited_by_count ?? 0,
   ]);
-  const quote = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+  const quote = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
   const csv = [headers, ...rows].map((row) => row.map(quote).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const href = URL.createObjectURL(blob);
