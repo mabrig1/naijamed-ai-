@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Spinner, StatusBadge } from "../components/Layout";
 
 type SubscriptionPlan = {
-  id: "family_pass" | "doctor_workspace";
+  id: "family_pass" | "doctor_workspace" | "formulary_student";
   label: string;
   audience: string;
   price_kobo: number;
@@ -55,6 +55,13 @@ function naira(kobo: number) {
   }).format(kobo / 100);
 }
 
+function planLabel(planId: string) {
+  if (planId === "family_pass") return "Family Health Pass";
+  if (planId === "doctor_workspace") return "Doctor Workspace";
+  if (planId === "formulary_student") return "Formulary Scholar";
+  return "Subscription";
+}
+
 function detail(error: unknown): string {
   return (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Request failed. Please try again.";
 }
@@ -96,7 +103,7 @@ export default function Pricing() {
     setMessage("Confirming your subscription payment…");
     api.get<{ plan_id: string; status: string }>(`/api/clinical/subscriptions/verify/${encodeURIComponent(reference)}`)
       .then(({ data }) => {
-        setMessage(`${data.plan_id === "family_pass" ? "Family Health Pass" : "Doctor Workspace"} is active.`);
+        setMessage(`${planLabel(data.plan_id)} is active.`);
         return refreshSubscriptions();
       })
       .catch((err: unknown) => setError(detail(err)))
