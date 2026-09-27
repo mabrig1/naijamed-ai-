@@ -90,3 +90,22 @@ The webhook signature is verified with HMAC-SHA512 before payment or subscriptio
 6. Test one provider consultation payment and confirm the 18% platform fee is recorded.
 7. Switch to live keys only after the test flows pass.
 8. Track monthly recurring revenue, paid consultation GMV, platform commission, research-service revenue, checkout conversion and churn.
+
+
+## Deployment topology check
+
+The current Vercel Git integration reports `rootDirectory: frontend`.
+
+That is sufficient to build the React/Vite application, but the Python serverless API in the repository-level `api/` directory is outside that Vercel project root. Before production rollout, confirm one of these architectures:
+
+1. **Single Vercel project from repository root** — change the Vercel Root Directory from `frontend` to the repository root and use the root `vercel.json` build/output settings; or
+2. **Separate frontend and backend deployments** — keep the frontend project rooted at `frontend`, deploy the Python API as its own project/service, and set `VITE_API_URL` to that backend origin.
+
+Do not treat a green frontend Vercel build as proof that the Python endpoints are live. Health-check the following routes against the production API before enabling paid traffic:
+
+- `GET /api/clinical/plans`
+- `GET /api/formulary` (authenticated)
+- `GET /api/formulary/pkpd/runs` (authenticated)
+- `POST /api/clinical/subscriptions/checkout`
+- `POST /api/formulary/pkpd/nca`
+
