@@ -5,9 +5,10 @@ import hmac
 import json
 import os
 import re
+import secrets
 import sys
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
@@ -167,6 +168,58 @@ class FormularyPKSimulationRequest(BaseModel):
     time_unit: str = Field(default="h", min_length=1, max_length=30)
     dose_unit: str = Field(default="mg", min_length=1, max_length=30)
     volume_unit: str = Field(default="L", min_length=1, max_length=30)
+
+
+class FormularyPortfolioProfileRequest(BaseModel):
+    track: Literal["pharmd", "residency", "msc", "phd", "other"]
+    program_name: str = Field(min_length=2, max_length=240)
+    institution: str = Field(min_length=2, max_length=240)
+    specialty: str | None = Field(default=None, max_length=160)
+    start_date: date | None = None
+    target_end_date: date | None = None
+    summary: str | None = Field(default=None, max_length=3000)
+    competencies: list[str] = Field(default_factory=list, max_length=100)
+    public_enabled: bool = False
+    public_slug: str | None = Field(default=None, min_length=3, max_length=80)
+
+
+class FormularyPortfolioItemRequest(BaseModel):
+    category: Literal[
+        "rotation", "clinical_intervention", "development_plan", "evaluation",
+        "research_milestone", "committee", "presentation", "publication",
+        "grant", "teaching", "certification", "coursework", "experiment", "other"
+    ]
+    title: str = Field(min_length=2, max_length=240)
+    description: str | None = Field(default=None, max_length=5000)
+    occurred_on: date
+    status: Literal["planned", "in_progress", "completed"] = "completed"
+    competencies: list[str] = Field(default_factory=list, max_length=50)
+    hours: float | None = Field(default=None, ge=0, le=10000)
+    outcome: str | None = Field(default=None, max_length=2000)
+    evidence_url: str | None = Field(default=None, max_length=1000)
+    visibility: Literal["private", "public"] = "private"
+
+
+class FormularyPortfolioItemUpdate(BaseModel):
+    status: Literal["planned", "in_progress", "completed"] | None = None
+    outcome: str | None = Field(default=None, max_length=2000)
+    evidence_url: str | None = Field(default=None, max_length=1000)
+    visibility: Literal["private", "public"] | None = None
+
+
+class FormularyAttestationRequest(BaseModel):
+    item_id: str = Field(min_length=3, max_length=120)
+    verifier_name: str = Field(min_length=2, max_length=200)
+    verifier_email: EmailStr
+    message: str | None = Field(default=None, max_length=1500)
+
+
+class FormularyAttestationSubmit(BaseModel):
+    verifier_name: str = Field(min_length=2, max_length=200)
+    verifier_title: str | None = Field(default=None, max_length=200)
+    organization: str | None = Field(default=None, max_length=240)
+    comment: str | None = Field(default=None, max_length=2000)
+    attest: bool
 
 
 class SMSRequest(BaseModel):
