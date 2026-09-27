@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Spinner } from "../../components/Layout";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location.state as { from?: string } | null)?.from || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +19,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate(returnTo, { replace: true });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setError(msg ?? "Invalid email or password. Please try again.");
@@ -61,7 +63,7 @@ export default function Login() {
 
           <div className="mt-6 pt-5 border-t border-gray-100 text-center text-sm text-gray-500">
             Don't have an account?{" "}
-            <Link to="/register" className="text-forest-600 font-semibold hover:underline">Create one free</Link>
+            <Link to="/register" state={{ from: returnTo }} className="text-forest-600 font-semibold hover:underline">Create one free</Link>
           </div>
         </div>
 
