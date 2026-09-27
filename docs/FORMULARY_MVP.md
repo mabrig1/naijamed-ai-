@@ -92,11 +92,28 @@ Each extraction can be corrected by the researcher, and the review records wheth
 - Extracted values must be checked against the source before publication, clinical use, regulatory submission or grant submission.
 - Formulary must not fabricate missing values.
 
+## PK/PD Simulator — implemented
+
+Route: `/formulary/pkpd`
+
+The first simulator release includes:
+
+- observed-data noncompartmental analysis using linear trapezoidal AUC;
+- observed Cmax and Tmax;
+- terminal log-linear regression using a user-selected 3–8 terminal points;
+- λz, terminal half-life and terminal-fit R²;
+- AUC₀–last, AUC extrapolation and AUC₀–∞;
+- warnings when terminal fit is weak or >20% of AUC∞ is extrapolated;
+- IV clearance and Vz when an IV dose is explicitly supplied;
+- one-compartment IV-bolus simulation;
+- one-compartment oral simulation with first-order absorption and user-supplied bioavailability;
+- concentration–time visualization and persistent saved runs.
+
+Free accounts receive 3 saved PK/PD runs. Formulary Scholar receives unlimited simulator access.
+
+The simulator is for research and teaching. It does not select or recommend patient doses.
+
 ## Roadmap
-
-### Phase 2 — PK/PD Simulator
-
-No-code one- and two-compartment workflows, concentration-time curves, AUC, Cmax, Tmax, half-life and parameter comparison.
 
 ### Phase 3 — Residency / Research Portfolio
 
