@@ -37,6 +37,7 @@ from app.clinical.voice import transcribe_audio
 from app.core.config import settings
 from app.core.mongo import get_db
 from app.formulary_pk import noncompartmental_analysis, one_compartment_simulation
+from app.formulary_regulatory import build_evidence_source, deterministic_gap_check, generate_grounded_draft, official_sources, validate_source_ids
 
 
 app = FastAPI(
@@ -221,6 +222,29 @@ class FormularyAttestationSubmit(BaseModel):
     organization: str | None = Field(default=None, max_length=240)
     comment: str | None = Field(default=None, max_length=2000)
     attest: bool
+
+
+class FormularyCopilotCustomSource(BaseModel):
+    title: str = Field(min_length=2, max_length=300)
+    url: str | None = Field(default=None, max_length=1200)
+    excerpt: str = Field(min_length=20, max_length=12000)
+    status: str = Field(default="user_supplied", max_length=80)
+
+
+class FormularyCopilotWorkspaceRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=240)
+    purpose: Literal["specific_aims", "research_strategy", "grant_plan", "regulatory_brief", "ctd_plan", "protocol_outline", "compliance_gap"]
+    objective: str = Field(min_length=20, max_length=6000)
+    jurisdiction: str | None = Field(default=None, max_length=160)
+    nofo_url: str | None = Field(default=None, max_length=1200)
+    official_source_ids: list[str] = Field(default_factory=list, max_length=30)
+    review_ids: list[str] = Field(default_factory=list, max_length=20)
+    custom_sources: list[FormularyCopilotCustomSource] = Field(default_factory=list, max_length=8)
+    notes: str | None = Field(default=None, max_length=12000)
+
+
+class FormularyCopilotDraftRequest(BaseModel):
+    instruction: str | None = Field(default=None, max_length=4000)
 
 
 class SMSRequest(BaseModel):
