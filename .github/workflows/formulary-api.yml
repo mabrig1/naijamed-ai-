@@ -5,6 +5,7 @@ on:
     paths:
       - "api/index.py"
       - "backend/app/formulary_pk.py"
+      - "backend/app/formulary_regulatory.py"
       - ".github/workflows/formulary-api.yml"
   push:
     branches:
@@ -12,6 +13,7 @@ on:
     paths:
       - "api/index.py"
       - "backend/app/formulary_pk.py"
+      - "backend/app/formulary_regulatory.py"
 
 permissions:
   contents: read
@@ -29,4 +31,4 @@ jobs:
           python-version: "3.12"
 
       - name: Compile API modules
-        run: python -m py_compile api/index.py backend/app/formulary_pk.py
+        run: python -m py_compile api/index.py backend/app/formulary_pk.py backend/app/formulary_regulatory.py
