@@ -39,6 +39,7 @@ from app.core.mongo import get_db
 from app.formulary_pk import noncompartmental_analysis, one_compartment_simulation
 from app.formulary_regulatory import build_evidence_source, deterministic_gap_check, generate_grounded_draft, official_sources, validate_source_ids
 from app.formulary_journal import appraisal_template, evidence_snapshot, fact_check_claim
+from app.formulary_grants import disclosure_watermark, normalize_percentages, project_template, readiness_assessment
 
 
 app = FastAPI(
@@ -282,6 +283,75 @@ class FormularyJournalItemRequest(BaseModel):
 class FormularyJournalFactCheckRequest(BaseModel):
     claim: str = Field(min_length=5, max_length=3000)
     entry_ids: list[str] = Field(default_factory=list, max_length=12)
+
+
+class FormularyGrantProjectRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=260)
+    acronym: str | None = Field(default=None, max_length=40)
+    project_type: Literal["flagship_research", "consortium", "implementation", "fellowship", "infrastructure"] = "flagship_research"
+    originator_name: str = Field(min_length=2, max_length=200)
+    host_institution: str | None = Field(default=None, max_length=240)
+    country: str | None = Field(default=None, max_length=120)
+    location: str | None = Field(default=None, max_length=200)
+    duration_months: int | None = Field(default=None, ge=1, le=120)
+    budget_amount: float | None = Field(default=None, gt=0)
+    budget_currency: str = Field(default="NGN", min_length=3, max_length=8)
+    funder_name: str | None = Field(default=None, max_length=240)
+    call_reference: str | None = Field(default=None, max_length=200)
+    call_url: str | None = Field(default=None, max_length=1200)
+    deadline: datetime | None = None
+    summary: str | None = Field(default=None, max_length=8000)
+    problem_statement: str | None = Field(default=None, max_length=12000)
+    objectives: list[str] = Field(default_factory=list, max_length=20)
+    confidentiality_level: Literal["private", "controlled", "consortium"] = "controlled"
+
+
+class FormularyGrantPartnerRequest(BaseModel):
+    organization: str = Field(min_length=2, max_length=240)
+    country: str | None = Field(default=None, max_length=120)
+    partner_type: Literal["university", "hospital", "government", "ngo", "industry", "sme", "research_institute", "community", "other"] = "university"
+    status: Literal["prospect", "contacted", "interested", "committed", "confirmed", "declined"] = "prospect"
+    proposed_role: str | None = Field(default=None, max_length=3000)
+    lead_contact: str | None = Field(default=None, max_length=200)
+    contact_email: EmailStr | None = None
+
+
+class FormularyGrantWorkPackageRequest(BaseModel):
+    title: str = Field(min_length=2, max_length=240)
+    sequence: int = Field(ge=1, le=99)
+    lead_partner: str | None = Field(default=None, max_length=240)
+    objective: str | None = Field(default=None, max_length=5000)
+    outputs: list[str] = Field(default_factory=list, max_length=30)
+    budget_amount: float | None = Field(default=None, ge=0)
+
+
+class FormularyGrantMilestoneRequest(BaseModel):
+    title: str = Field(min_length=2, max_length=240)
+    milestone_type: Literal["proposal", "partnership", "ethics", "scientific", "financial", "submission", "other"] = "proposal"
+    due_on: date | None = None
+    status: Literal["planned", "in_progress", "completed", "blocked"] = "planned"
+    owner: str | None = Field(default=None, max_length=200)
+    evidence: str | None = Field(default=None, max_length=1000)
+
+
+class FormularyGrantIPAssetRequest(BaseModel):
+    title: str = Field(min_length=2, max_length=240)
+    category: Literal["background_ip", "proposal", "software", "method", "dataset", "partner_relationship", "other"]
+    ownership_statement: str = Field(min_length=10, max_length=5000)
+    evidence_reference: str | None = Field(default=None, max_length=1200)
+    created_before_collaboration: bool = True
+    disclosure_level: Literal["private", "summary_only", "controlled", "full_after_agreement"] = "controlled"
+
+
+class FormularyGrantDisclosureRequest(BaseModel):
+    recipient_name: str = Field(min_length=2, max_length=200)
+    recipient_organization: str | None = Field(default=None, max_length=240)
+    disclosed_at: datetime
+    material: str = Field(min_length=2, max_length=500)
+    version: str | None = Field(default=None, max_length=80)
+    purpose: str | None = Field(default=None, max_length=1000)
+    confidentiality_basis: str | None = Field(default=None, max_length=1000)
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class SMSRequest(BaseModel):
