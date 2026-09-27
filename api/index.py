@@ -39,7 +39,7 @@ from app.core.mongo import get_db
 from app.formulary_pk import noncompartmental_analysis, one_compartment_simulation
 from app.formulary_regulatory import build_evidence_source, deterministic_gap_check, generate_grounded_draft, official_sources, validate_source_ids
 from app.formulary_journal import appraisal_template, evidence_snapshot, fact_check_claim
-from app.formulary_grants import disclosure_watermark, normalize_percentages, project_template, readiness_assessment
+from app.formulary_grants import disclosure_watermark, funder_lens, funder_profile_assessment, normalize_percentages, project_template, readiness_assessment, safe_funder_snapshot
 
 
 app = FastAPI(
@@ -371,6 +371,37 @@ class FormularyGrantDisclosureRequest(BaseModel):
     purpose: str | None = Field(default=None, max_length=1000)
     confidentiality_basis: str | None = Field(default=None, max_length=1000)
     notes: str | None = Field(default=None, max_length=2000)
+
+
+class FormularyGrantFunderProfileRequest(BaseModel):
+    funder_lens: Literal["cross_funder", "horizon_europe", "nih", "wellcome"] = "cross_funder"
+    innovation_case: str | None = Field(default=None, max_length=8000)
+    global_relevance: str | None = Field(default=None, max_length=8000)
+    rigor_feasibility: str | None = Field(default=None, max_length=12000)
+    impact_pathway: str | None = Field(default=None, max_length=12000)
+    institutional_capacity: str | None = Field(default=None, max_length=8000)
+    ethics_governance: str | None = Field(default=None, max_length=8000)
+    data_open_science: str | None = Field(default=None, max_length=8000)
+    equity_capacity_building: str | None = Field(default=None, max_length=8000)
+    sustainability_scale: str | None = Field(default=None, max_length=8000)
+    policy_translation: str | None = Field(default=None, max_length=8000)
+    monitoring_evaluation: str | None = Field(default=None, max_length=8000)
+    risk_management: str | None = Field(default=None, max_length=8000)
+    cofunding_leverage: str | None = Field(default=None, max_length=5000)
+    impact_metrics: list[str] = Field(default_factory=list, max_length=30)
+    capacity_outputs: list[str] = Field(default_factory=list, max_length=30)
+    data_management_commitments: list[str] = Field(default_factory=list, max_length=30)
+    sdg_alignment: list[str] = Field(default_factory=list, max_length=17)
+    keywords: list[str] = Field(default_factory=list, max_length=30)
+
+
+class FormularyGrantFunderRoomRequest(BaseModel):
+    recipient_label: str | None = Field(default=None, max_length=240)
+    expires_in_days: int = Field(default=14, ge=1, le=30)
+    include_budget: bool = True
+    include_partners: bool = True
+    include_milestones: bool = True
+    note: str | None = Field(default=None, max_length=1200)
 
 
 class SMSRequest(BaseModel):
