@@ -7,6 +7,7 @@ on:
       - "backend/app/formulary_pk.py"
       - "backend/app/formulary_regulatory.py"
       - "backend/app/formulary_journal.py"
+      - "backend/app/formulary_grants.py"
       - ".github/workflows/formulary-api.yml"
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - "backend/app/formulary_pk.py"
       - "backend/app/formulary_regulatory.py"
       - "backend/app/formulary_journal.py"
+      - "backend/app/formulary_grants.py"
 
 permissions:
   contents: read
@@ -33,4 +35,4 @@ jobs:
           python-version: "3.12"
 
       - name: Compile API modules
-        run: python -m py_compile api/index.py backend/app/formulary_pk.py backend/app/formulary_regulatory.py backend/app/formulary_journal.py
+        run: python -m py_compile api/index.py backend/app/formulary_pk.py backend/app/formulary_regulatory.py backend/app/formulary_journal.py backend/app/formulary_grants.py
