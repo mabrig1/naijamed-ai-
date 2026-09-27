@@ -56,6 +56,8 @@ FORMULARY_STUDENT_MONTHLY_KOBO=800000
 FORMULARY_STUDENT_PAYSTACK_PLAN_CODE=
 FORMULARY_FREE_REVIEW_LIMIT=2
 FORMULARY_FREE_PAPER_LIMIT=10
+FORMULARY_FREE_PK_RUN_LIMIT=3
+FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT=25
 FORMULARY_PDF_MAX_BYTES=12582912
 FORMULARY_LLM_MODEL=
 ```
@@ -67,6 +69,8 @@ FORMULARY_LLM_MODEL=
 - DOI import
 - PDF extraction
 - evidence correction provenance
+- 3 saved PK/PD runs
+- 25 residency/research portfolio items
 
 ### Formulary Scholar
 
@@ -74,6 +78,9 @@ FORMULARY_LLM_MODEL=
 - unlimited evidence entries;
 - structured PDF extraction;
 - citation-watch workflow;
+- unlimited PK/PD simulator runs;
+- unlimited residency/research portfolio tracking;
+- opt-in public portfolio and supervisor/preceptor attestations;
 - future advanced modules as they launch.
 
 The listed price is currently ₦8,000/month but is environment-configurable.
@@ -113,11 +120,35 @@ Free accounts receive 3 saved PK/PD runs. Formulary Scholar receives unlimited s
 
 The simulator is for research and teaching. It does not select or recommend patient doses.
 
+## Rotation & Research Portfolio — implemented
+
+Route: `/formulary/portfolio`
+
+The tracker supports PharmD, residency, M.Sc., Ph.D. and custom postgraduate tracks. It includes:
+
+- configurable program profile, specialty, dates and competency framework;
+- rotations / learning experiences;
+- clinical interventions;
+- development-plan entries and evaluations;
+- research and laboratory milestones;
+- thesis / committee milestones;
+- presentations and journal clubs;
+- publications, grants and fellowships;
+- teaching, certification and coursework records;
+- hours, outcomes/reflections and evidence URLs;
+- private/public visibility per portfolio item;
+- opt-in public portfolio page;
+- 14-day private supervisor/preceptor attestation links tied to the intended verifier email.
+
+Attestation is deliberately described as **attestation**, not independent credential verification. Formulary records the verifier response, name, role and organization but does not independently certify employment, licensure or institutional identity.
+
+The architecture is intentionally configurable rather than claiming automatic ASHP compliance. Current ASHP residency resources emphasize learning experiences, schedules, evaluations, resident development plans, objectives and portfolio/file management; institutions can map those workflows into their own Formulary competency framework.
+
+References:
+- https://www.ashp.org/professional-development/residency-information/residency-program-resources/pharmacademic
+- https://www.ashp.org/professional-development/residency-information/residency-program-resources
+
 ## Roadmap
-
-### Phase 3 — Residency / Research Portfolio
-
-Clinical interventions, rotation milestones, lab presentations, committee meetings, grant deadlines and verified output portfolio.
 
 ### Phase 4 — Regulatory & Grant Copilot
 
