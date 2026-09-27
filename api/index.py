@@ -306,6 +306,25 @@ class FormularyGrantProjectRequest(BaseModel):
     confidentiality_level: Literal["private", "controlled", "consortium"] = "controlled"
 
 
+class FormularyGrantProjectUpdate(BaseModel):
+    acronym: str | None = Field(default=None, max_length=40)
+    host_institution: str | None = Field(default=None, max_length=240)
+    country: str | None = Field(default=None, max_length=120)
+    location: str | None = Field(default=None, max_length=200)
+    duration_months: int | None = Field(default=None, ge=1, le=120)
+    budget_amount: float | None = Field(default=None, gt=0)
+    budget_currency: str | None = Field(default=None, min_length=3, max_length=8)
+    funder_name: str | None = Field(default=None, max_length=240)
+    call_reference: str | None = Field(default=None, max_length=200)
+    call_url: str | None = Field(default=None, max_length=1200)
+    deadline: datetime | None = None
+    summary: str | None = Field(default=None, max_length=8000)
+    problem_statement: str | None = Field(default=None, max_length=12000)
+    objectives: list[str] | None = Field(default=None, max_length=20)
+    confidentiality_level: Literal["private", "controlled", "consortium"] | None = None
+    status: Literal["concept", "institutional_engagement", "consortium_building", "drafting", "internal_review", "submitted", "awarded", "declined"] | None = None
+
+
 class FormularyGrantPartnerRequest(BaseModel):
     organization: str = Field(min_length=2, max_length=240)
     country: str | None = Field(default=None, max_length=120)
