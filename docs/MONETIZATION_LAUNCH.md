@@ -8,6 +8,7 @@ The app now supports four complementary revenue lanes instead of relying on one 
 |---|---|---|
 | Consumer subscription | Family Health Pass | ₦5,000/month |
 | Professional subscription | Doctor Workspace | ₦15,000/month |
+| Research subscription | Formulary Scholar | ₦8,000/month |
 | Marketplace | Verified doctor consultations | Provider-set fee; 18% platform commission |
 | Research services | ADMET, docking, network pharmacology, research packages | Existing public package pricing |
 
@@ -16,7 +17,7 @@ Institutional clinic, HMO, campus and employer deals remain custom-quoted.
 ## What is implemented
 
 - Public pricing page at `/pricing`.
-- Paystack subscription checkout for Family Health Pass and Doctor Workspace.
+- Paystack subscription checkout for Family Health Pass, Doctor Workspace and Formulary Scholar.
 - Secure payment verification against the signed-in account.
 - Subscription lifecycle persistence in MongoDB.
 - Paystack webhook handling for:
@@ -31,7 +32,7 @@ Institutional clinic, HMO, campus and employer deals remain custom-quoted.
 
 ## Paystack activation
 
-Create two monthly plans in the same Paystack environment as `PAYSTACK_SECRET_KEY`:
+Create three monthly plans in the same Paystack environment as `PAYSTACK_SECRET_KEY`:
 
 1. **Family Health Pass**
    - interval: monthly
@@ -42,6 +43,11 @@ Create two monthly plans in the same Paystack environment as `PAYSTACK_SECRET_KE
    - interval: monthly
    - amount: ₦15,000 (1500000 kobo)
    - save the returned `plan_code` as `DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE`
+
+3. **Formulary Scholar**
+   - interval: monthly
+   - amount: ₦8,000 (800000 kobo)
+   - save the returned `plan_code` as `FORMULARY_STUDENT_PAYSTACK_PLAN_CODE`
 
 The app initializes the first transaction from the backend and passes the plan code. Paystack then creates the recurring subscription after the successful first payment.
 
@@ -83,10 +89,10 @@ The webhook signature is verified with HMAC-SHA512 before payment or subscriptio
 ## Launch checklist
 
 1. Add live Paystack secret key in Vercel.
-2. Create the two Paystack plans and add their plan codes.
+2. Create the three Paystack plans and add their plan codes.
 3. Configure the clinical Paystack webhook.
-4. Run one test checkout for each subscription in Paystack test mode.
-5. Verify `/pricing` displays both plans and the signed-in account receives an active entitlement after payment.
+4. Run one test checkout for each of the three subscriptions in Paystack test mode.
+5. Verify `/pricing` displays all subscription plans and the signed-in account receives an active entitlement after payment.
 6. Test one provider consultation payment and confirm the 18% platform fee is recorded.
 7. Switch to live keys only after the test flows pass.
 8. Track monthly recurring revenue, paid consultation GMV, platform commission, research-service revenue, checkout conversion and churn.
@@ -106,6 +112,8 @@ Do not treat a green frontend Vercel build as proof that the Python endpoints ar
 - `GET /api/clinical/plans`
 - `GET /api/formulary` (authenticated)
 - `GET /api/formulary/pkpd/runs` (authenticated)
+- `GET /api/formulary/portfolio` (authenticated)
+- `GET /api/formulary/portfolio/public/{slug}`
 - `POST /api/clinical/subscriptions/checkout`
 - `POST /api/formulary/pkpd/nca`
 
