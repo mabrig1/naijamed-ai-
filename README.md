@@ -83,8 +83,9 @@ See `docs/FORMULARY_MVP.md` for architecture, research-integrity rules and rollo
 - **Rotation & Research Portfolio** — PharmD/residency/postgraduate milestones with optional attestations.
 - **Regulatory & Grant Copilot** — source-grounded FDA/ICH/NIH drafting with traceable source snapshots.
 - **Journal Club Live Room** — collaborative critical appraisal, linked evidence, action items and evidence-grounded fact checks.
+- **International Grant Project Studio** — consortium planning, work-package budgets, milestones, background-IP register, controlled-disclosure ledger and grant-readiness checks.
 
-Routes: `/formulary`, `/formulary/pkpd`, `/formulary/portfolio`, `/formulary/copilot`, `/formulary/journal`.
+Routes: `/formulary`, `/formulary/pkpd`, `/formulary/portfolio`, `/formulary/copilot`, `/formulary/journal`, `/formulary/grants`.
 
 
 ## Research & Discovery Studio
