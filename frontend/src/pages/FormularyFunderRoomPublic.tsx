@@ -165,7 +165,7 @@ export default function FormularyFunderRoomPublic() {
                 <article className="card">
                   <div className="text-xs font-bold uppercase tracking-[0.18em] text-forest-500">The challenge</div>
                   <h2 className="mt-2 text-2xl font-bold text-forest-900">Why this research matters</h2>
-                  <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-650">{p.problem_statement}</p>
+                  <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-600">{p.problem_statement}</p>
                 </article>
               )}
 
