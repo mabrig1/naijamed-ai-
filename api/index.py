@@ -38,6 +38,7 @@ from app.core.config import settings
 from app.core.mongo import get_db
 from app.formulary_pk import noncompartmental_analysis, one_compartment_simulation
 from app.formulary_regulatory import build_evidence_source, deterministic_gap_check, generate_grounded_draft, official_sources, validate_source_ids
+from app.formulary_journal import appraisal_template, evidence_snapshot, fact_check_claim
 
 
 app = FastAPI(
@@ -245,6 +246,42 @@ class FormularyCopilotWorkspaceRequest(BaseModel):
 
 class FormularyCopilotDraftRequest(BaseModel):
     instruction: str | None = Field(default=None, max_length=4000)
+
+
+class FormularyJournalRoomRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=240)
+    review_id: str = Field(min_length=3, max_length=120)
+    entry_ids: list[str] = Field(default_factory=list, min_length=1, max_length=12)
+    scheduled_at: datetime | None = None
+    meeting_url: str | None = Field(default=None, max_length=1200)
+    agenda: list[str] = Field(default_factory=list, max_length=20)
+    appraisal_template: Literal["general", "rct", "pk"] = "general"
+
+
+class FormularyJournalRoomUpdate(BaseModel):
+    status: Literal["scheduled", "live", "closed"] | None = None
+    meeting_url: str | None = Field(default=None, max_length=1200)
+    agenda: list[str] | None = Field(default=None, max_length=20)
+    locked: bool | None = None
+
+
+class FormularyJournalJoinRequest(BaseModel):
+    token: str = Field(min_length=16, max_length=200)
+
+
+class FormularyJournalItemRequest(BaseModel):
+    kind: Literal["note", "question", "claim", "decision", "action", "appraisal"]
+    content: str = Field(min_length=1, max_length=5000)
+    entry_id: str | None = Field(default=None, max_length=120)
+    appraisal_section: str | None = Field(default=None, max_length=120)
+    rating: Literal["strong", "adequate", "weak", "unclear"] | None = None
+    assigned_to: str | None = Field(default=None, max_length=200)
+    due_on: date | None = None
+
+
+class FormularyJournalFactCheckRequest(BaseModel):
+    claim: str = Field(min_length=5, max_length=3000)
+    entry_ids: list[str] = Field(default_factory=list, max_length=12)
 
 
 class SMSRequest(BaseModel):
