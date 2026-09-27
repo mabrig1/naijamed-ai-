@@ -202,6 +202,7 @@ export default function Layout() {
                       <Link to="/formulary" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📚 Formulary Workspace</Link>
                       <Link to="/formulary/portfolio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🎓 Research & Residency Portfolio</Link>
                       <Link to="/formulary/copilot" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧾 Regulatory & Grant Copilot</Link>
+                      <Link to="/formulary/journal" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🗣️ Journal Club Live Room</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
                       {String(user.role) === "admin" && <>
                         <Link to="/monetization/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📈 Monetization Dashboard</Link>
