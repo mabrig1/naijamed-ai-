@@ -1304,6 +1304,310 @@ def formulary_pk_simulate(body: FormularyPKSimulationRequest, user: dict[str, An
 
 
 
+
+def _portfolio_slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    if len(slug) < 3:
+        slug = f"researcher-{uuid.uuid4().hex[:8]}"
+    return slug[:80]
+
+
+def _portfolio_item_public(row: dict[str, Any], *, include_private: bool = False) -> dict[str, Any]:
+    result = {
+        "id": row["_id"],
+        "category": row.get("category"),
+        "title": row.get("title"),
+        "description": row.get("description"),
+        "occurred_on": row.get("occurred_on"),
+        "status": row.get("status"),
+        "competencies": row.get("competencies", []),
+        "hours": row.get("hours"),
+        "outcome": row.get("outcome"),
+        "visibility": row.get("visibility", "private"),
+        "attestation_status": row.get("attestation_status", "unattested"),
+        "attested_by": row.get("attested_by"),
+        "attested_at": row.get("attested_at").isoformat() if row.get("attested_at") else None,
+    }
+    if include_private or row.get("visibility") == "public":
+        result["evidence_url"] = row.get("evidence_url")
+    return result
+
+
+def _portfolio_summary(items: list[dict[str, Any]], competencies: list[str]) -> dict[str, Any]:
+    by_category: dict[str, int] = {}
+    by_status: dict[str, int] = {}
+    competency_hits: dict[str, int] = {name: 0 for name in competencies}
+    total_hours = 0.0
+    attested = 0
+    for item in items:
+        category = str(item.get("category") or "other")
+        status_name = str(item.get("status") or "planned")
+        by_category[category] = by_category.get(category, 0) + 1
+        by_status[status_name] = by_status.get(status_name, 0) + 1
+        total_hours += float(item.get("hours") or 0)
+        if item.get("attestation_status") == "attested":
+            attested += 1
+        for competency in item.get("competencies") or []:
+            competency_hits[competency] = competency_hits.get(competency, 0) + 1
+    return {
+        "total_items": len(items),
+        "completed_items": by_status.get("completed", 0),
+        "attested_items": attested,
+        "total_hours": round(total_hours, 2),
+        "by_category": by_category,
+        "by_status": by_status,
+        "competency_activity": competency_hits,
+    }
+
+
+def _portfolio_payload(user: dict[str, Any]) -> dict[str, Any]:
+    db = get_db()
+    user_id = str(user["_id"])
+    profile = db.formulary_portfolios.find_one({"user_id": user_id})
+    items = list(db.formulary_portfolio_items.find({"user_id": user_id}).sort("occurred_on", -1).limit(500))
+    return {
+        "profile": {
+            "track": profile.get("track") if profile else None,
+            "program_name": profile.get("program_name") if profile else None,
+            "institution": profile.get("institution") if profile else None,
+            "specialty": profile.get("specialty") if profile else None,
+            "start_date": profile.get("start_date") if profile else None,
+            "target_end_date": profile.get("target_end_date") if profile else None,
+            "summary": profile.get("summary") if profile else None,
+            "competencies": profile.get("competencies", []) if profile else [],
+            "public_enabled": bool(profile.get("public_enabled", False)) if profile else False,
+            "public_slug": profile.get("public_slug") if profile else None,
+        },
+        "items": [_portfolio_item_public(row, include_private=True) for row in items],
+        "summary": _portfolio_summary(items, profile.get("competencies", []) if profile else []),
+        "account": _formulary_account(user),
+    }
+
+
+@app.get("/api/formulary/portfolio")
+def formulary_portfolio(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    return _portfolio_payload(user)
+
+
+@app.put("/api/formulary/portfolio/profile")
+def formulary_portfolio_profile(body: FormularyPortfolioProfileRequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    db = get_db()
+    user_id = str(user["_id"])
+    slug = _portfolio_slug(body.public_slug or body.program_name)
+    if body.public_enabled:
+        conflict = db.formulary_portfolios.find_one({"public_slug": slug, "user_id": {"$ne": user_id}})
+        if conflict:
+            slug = f"{slug[:70]}-{uuid.uuid4().hex[:6]}"
+    doc = {
+        "user_id": user_id,
+        "track": body.track,
+        "program_name": body.program_name.strip(),
+        "institution": body.institution.strip(),
+        "specialty": body.specialty,
+        "start_date": body.start_date.isoformat() if body.start_date else None,
+        "target_end_date": body.target_end_date.isoformat() if body.target_end_date else None,
+        "summary": body.summary,
+        "competencies": [value.strip() for value in body.competencies if value.strip()],
+        "public_enabled": body.public_enabled,
+        "public_slug": slug if body.public_enabled else None,
+        "updated_at": _now(),
+    }
+    db.formulary_portfolios.update_one(
+        {"user_id": user_id},
+        {"$set": doc, "$setOnInsert": {"created_at": _now()}},
+        upsert=True,
+    )
+    return _portfolio_payload(user)
+
+
+@app.post("/api/formulary/portfolio/items", status_code=201)
+def formulary_portfolio_add_item(body: FormularyPortfolioItemRequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "portfolio_item")
+    if body.evidence_url and not re.match(r"^https?://", body.evidence_url, flags=re.I):
+        raise HTTPException(status_code=422, detail="Evidence URL must begin with http:// or https://")
+    row = {
+        "_id": f"FPI-{uuid.uuid4().hex[:14].upper()}",
+        "user_id": str(user["_id"]),
+        "category": body.category,
+        "title": body.title.strip(),
+        "description": body.description,
+        "occurred_on": body.occurred_on.isoformat(),
+        "status": body.status,
+        "competencies": [value.strip() for value in body.competencies if value.strip()],
+        "hours": body.hours,
+        "outcome": body.outcome,
+        "evidence_url": body.evidence_url,
+        "visibility": body.visibility,
+        "attestation_status": "unattested",
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_portfolio_items.insert_one(row)
+    return _portfolio_item_public(row, include_private=True)
+
+
+@app.patch("/api/formulary/portfolio/items/{item_id}")
+def formulary_portfolio_update_item(
+    item_id: str,
+    body: FormularyPortfolioItemUpdate,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    db = get_db()
+    row = db.formulary_portfolio_items.find_one({"_id": item_id, "user_id": str(user["_id"])})
+    if not row:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    update = body.model_dump(exclude_none=True)
+    if update.get("evidence_url") and not re.match(r"^https?://", str(update["evidence_url"]), flags=re.I):
+        raise HTTPException(status_code=422, detail="Evidence URL must begin with http:// or https://")
+    update["updated_at"] = _now()
+    db.formulary_portfolio_items.update_one({"_id": item_id}, {"$set": update})
+    updated = db.formulary_portfolio_items.find_one({"_id": item_id})
+    return _portfolio_item_public(updated, include_private=True)
+
+
+@app.post("/api/formulary/portfolio/attestations", status_code=201)
+def formulary_create_attestation(body: FormularyAttestationRequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    db = get_db()
+    item = db.formulary_portfolio_items.find_one({"_id": body.item_id, "user_id": str(user["_id"])})
+    if not item:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    row = {
+        "_id": f"FAT-{uuid.uuid4().hex[:14].upper()}",
+        "token_hash": token_hash,
+        "user_id": str(user["_id"]),
+        "item_id": body.item_id,
+        "verifier_name": body.verifier_name.strip(),
+        "verifier_email": str(body.verifier_email).lower(),
+        "message": body.message,
+        "status": "pending",
+        "expires_at": _now() + timedelta(days=14),
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    db.formulary_attestations.insert_one(row)
+    db.formulary_portfolio_items.update_one(
+        {"_id": body.item_id},
+        {"$set": {"attestation_status": "pending", "updated_at": _now()}},
+    )
+    return {
+        "id": row["_id"],
+        "status": "pending",
+        "expires_at": row["expires_at"].isoformat(),
+        "attestation_path": f"/formulary/attest/{raw_token}",
+        "note": "Share this private attestation link only with the intended verifier. Formulary records the verifier's attestation but does not independently validate institutional identity.",
+    }
+
+
+def _attestation_by_token(token: str) -> dict[str, Any]:
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    row = get_db().formulary_attestations.find_one({"token_hash": token_hash})
+    if not row:
+        raise HTTPException(status_code=404, detail="Attestation request not found")
+    if row.get("expires_at") and row["expires_at"] < _now() and row.get("status") == "pending":
+        get_db().formulary_attestations.update_one({"_id": row["_id"]}, {"$set": {"status": "expired", "updated_at": _now()}})
+        row["status"] = "expired"
+    return row
+
+
+@app.get("/api/formulary/attest/{token}")
+def formulary_attestation_detail(token: str):
+    row = _attestation_by_token(token)
+    item = get_db().formulary_portfolio_items.find_one({"_id": row["item_id"]})
+    user = get_db().users.find_one({"_id": ObjectId(row["user_id"])})
+    return {
+        "status": row.get("status"),
+        "expires_at": row.get("expires_at").isoformat() if row.get("expires_at") else None,
+        "researcher_name": user.get("full_name") if user else "Formulary researcher",
+        "item": {
+            "title": item.get("title") if item else None,
+            "category": item.get("category") if item else None,
+            "description": item.get("description") if item else None,
+            "occurred_on": item.get("occurred_on") if item else None,
+            "outcome": item.get("outcome") if item else None,
+        },
+        "intended_verifier_name": row.get("verifier_name"),
+        "message": row.get("message"),
+        "identity_notice": "This is a self-service supervisor/preceptor attestation. Formulary records the response but does not independently certify the verifier's employment or institution.",
+    }
+
+
+@app.post("/api/formulary/attest/{token}")
+def formulary_submit_attestation(token: str, body: FormularyAttestationSubmit):
+    db = get_db()
+    row = _attestation_by_token(token)
+    if row.get("status") != "pending":
+        raise HTTPException(status_code=409, detail=f"Attestation request is {row.get('status')}")
+    if str(body.verifier_email).lower() != str(row.get("verifier_email") or "").lower():
+        raise HTTPException(status_code=403, detail="Verifier email does not match the intended attestation recipient")
+    status_name = "attested" if body.attest else "declined"
+    update = {
+        "status": status_name,
+        "response": {
+            "verifier_name": body.verifier_name.strip(),
+            "verifier_title": body.verifier_title,
+            "organization": body.organization,
+            "comment": body.comment,
+        },
+        "responded_at": _now(),
+        "updated_at": _now(),
+    }
+    db.formulary_attestations.update_one({"_id": row["_id"]}, {"$set": update})
+    item_update: dict[str, Any] = {
+        "attestation_status": status_name,
+        "updated_at": _now(),
+    }
+    if body.attest:
+        item_update.update(
+            {
+                "attested_by": {
+                    "name": body.verifier_name.strip(),
+                    "title": body.verifier_title,
+                    "organization": body.organization,
+                },
+                "attested_at": _now(),
+            }
+        )
+    db.formulary_portfolio_items.update_one({"_id": row["item_id"]}, {"$set": item_update})
+    return {"status": status_name, "message": "Attestation response recorded."}
+
+
+@app.get("/api/formulary/portfolio/public/{slug}")
+def formulary_public_portfolio(slug: str):
+    db = get_db()
+    profile = db.formulary_portfolios.find_one({"public_slug": slug, "public_enabled": True})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Public Formulary portfolio not found")
+    user = db.users.find_one({"_id": ObjectId(profile["user_id"])})
+    items = list(
+        db.formulary_portfolio_items.find(
+            {"user_id": profile["user_id"], "visibility": "public"}
+        ).sort("occurred_on", -1).limit(300)
+    )
+    return {
+        "researcher": {
+            "name": user.get("full_name") if user else "Formulary researcher",
+            "track": profile.get("track"),
+            "program_name": profile.get("program_name"),
+            "institution": profile.get("institution"),
+            "specialty": profile.get("specialty"),
+            "summary": profile.get("summary"),
+            "start_date": profile.get("start_date"),
+            "target_end_date": profile.get("target_end_date"),
+        },
+        "items": [_portfolio_item_public(row) for row in items],
+        "summary": _portfolio_summary(items, profile.get("competencies", [])),
+        "verification_notice": "Attested items reflect a response through a private Formulary attestation link; Formulary does not independently certify institutional identity.",
+    }
+
+
+
 # -------------------------- monetization ------------------------------------
 
 
