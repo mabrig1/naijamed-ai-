@@ -591,15 +591,18 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
     review_count = get_db().formulary_reviews.count_documents({"user_id": user_id})
     paper_count = get_db().formulary_entries.count_documents({"user_id": user_id})
     pk_run_count = get_db().formulary_pk_runs.count_documents({"user_id": user_id})
+    portfolio_item_count = get_db().formulary_portfolio_items.count_documents({"user_id": user_id})
     return {
         "plan": "formulary_student" if pro else "free",
         "is_pro": pro,
         "review_count": review_count,
         "paper_count": paper_count,
         "pk_run_count": pk_run_count,
+        "portfolio_item_count": portfolio_item_count,
         "review_limit": None if pro else settings.FORMULARY_FREE_REVIEW_LIMIT,
         "paper_limit": None if pro else settings.FORMULARY_FREE_PAPER_LIMIT,
         "pk_run_limit": None if pro else settings.FORMULARY_FREE_PK_RUN_LIMIT,
+        "portfolio_item_limit": None if pro else settings.FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT,
         "upgrade_path": "/pricing",
     }
 
@@ -629,6 +632,13 @@ def _formulary_enforce_limit(user: dict[str, Any], resource: str) -> None:
             raise HTTPException(
                 status_code=402,
                 detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_PK_RUN_LIMIT} saved PK/PD runs. Upgrade to Formulary Scholar for unlimited simulations.",
+            )
+    if resource == "portfolio_item":
+        used = db.formulary_portfolio_items.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT} portfolio items. Upgrade to Formulary Scholar for unlimited tracking.",
             )
 
 
@@ -938,9 +948,9 @@ def formulary_home(user: dict[str, Any] = Depends(current_user)):
                 "Field-level correction provenance",
                 "Citation-watch refresh through OpenAlex",
                 "PK/PD Simulator: NCA and one-compartment models",
+                "Rotation & Research Portfolio Tracker",
             ],
             "coming_next": [
-                "Rotation & Residency Tracker",
                 "Regulatory & Grant Copilot",
                 "Journal Club Live Room",
             ],
