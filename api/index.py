@@ -216,6 +216,7 @@ class FormularyAttestationRequest(BaseModel):
 
 class FormularyAttestationSubmit(BaseModel):
     verifier_name: str = Field(min_length=2, max_length=200)
+    verifier_email: EmailStr
     verifier_title: str | None = Field(default=None, max_length=200)
     organization: str | None = Field(default=None, max_length=240)
     comment: str | None = Field(default=None, max_length=2000)
