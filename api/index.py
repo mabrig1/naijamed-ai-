@@ -58,7 +58,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 # ----------------------------- schemas --------------------------------------
 
-Role = Literal["patient", "doctor", "clinic", "hmo", "admin"]
+Role = Literal["patient", "researcher", "doctor", "clinic", "hmo", "admin"]
 
 
 class RegisterRequest(BaseModel):
@@ -292,7 +292,7 @@ def admin_user(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
 def register(body: RegisterRequest):
     db = get_db()
     email = body.email.lower().strip()
-    allowed_self_roles = {"patient", "doctor", "clinic", "hmo"}
+    allowed_self_roles = {"patient", "researcher", "doctor", "clinic", "hmo"}
     role: str = body.role if body.role in allowed_self_roles else "patient"
     admin_emails = {e.strip().lower() for e in settings.ADMIN_EMAILS.split(",") if e.strip()}
     if email in admin_emails:
@@ -1692,7 +1692,7 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
     if "formulary_student" in active_plan_ids:
-        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator"})
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio"})
     return sorted(entitlements)
 
 
