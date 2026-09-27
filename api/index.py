@@ -35,6 +35,7 @@ from app.clinical.multimodal import analyze_medical_image
 from app.clinical.voice import transcribe_audio
 from app.core.config import settings
 from app.core.mongo import get_db
+from app.formulary_pk import noncompartmental_analysis, one_compartment_simulation
 
 
 app = FastAPI(
@@ -131,6 +132,41 @@ class FormularyCorrectionRequest(BaseModel):
 
 class FormularyCitationRefreshRequest(BaseModel):
     entry_id: str | None = Field(default=None, max_length=120)
+
+
+class PKObservation(BaseModel):
+    time: float = Field(ge=0)
+    concentration: float = Field(ge=0)
+
+
+class FormularyPKNCARequest(BaseModel):
+    title: str = Field(default="NCA Run", min_length=2, max_length=240)
+    review_id: str | None = Field(default=None, max_length=120)
+    entry_id: str | None = Field(default=None, max_length=120)
+    observations: list[PKObservation] = Field(min_length=3, max_length=500)
+    terminal_points: int = Field(default=3, ge=3, le=8)
+    dose: float | None = Field(default=None, gt=0)
+    route: Literal["iv", "oral", "other"] = "other"
+    time_unit: str = Field(default="h", min_length=1, max_length=30)
+    concentration_unit: str = Field(default="mg/L", min_length=1, max_length=40)
+    dose_unit: str = Field(default="mg", min_length=1, max_length=30)
+
+
+class FormularyPKSimulationRequest(BaseModel):
+    title: str = Field(default="One-compartment Simulation", min_length=2, max_length=240)
+    review_id: str | None = Field(default=None, max_length=120)
+    entry_id: str | None = Field(default=None, max_length=120)
+    model: Literal["one_compartment_iv_bolus", "one_compartment_oral"]
+    dose: float = Field(gt=0)
+    volume: float = Field(gt=0)
+    elimination_half_life: float = Field(gt=0)
+    duration: float = Field(gt=0)
+    points: int = Field(default=101, ge=20, le=500)
+    bioavailability: float = Field(default=1.0, gt=0, le=1)
+    absorption_rate: float | None = Field(default=None, gt=0)
+    time_unit: str = Field(default="h", min_length=1, max_length=30)
+    dose_unit: str = Field(default="mg", min_length=1, max_length=30)
+    volume_unit: str = Field(default="L", min_length=1, max_length=30)
 
 
 class SMSRequest(BaseModel):
@@ -1161,7 +1197,7 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
     if "formulary_student" in active_plan_ids:
-        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction"})
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator"})
     return sorted(entitlements)
 
 
