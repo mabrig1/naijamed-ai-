@@ -70,4 +70,10 @@ def get_db() -> Database:
     db.formulary_entries.create_index([("openalex_id", ASCENDING)], sparse=True, name="ix_formulary_entries_openalex")
     db.formulary_pk_runs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_pk_runs_user")
     db.formulary_pk_runs.create_index([("review_id", ASCENDING), ("created_at", DESCENDING)], sparse=True, name="ix_formulary_pk_runs_review")
+    db.formulary_portfolios.create_index([("user_id", ASCENDING)], unique=True, name="uq_formulary_portfolio_user")
+    db.formulary_portfolios.create_index([("public_slug", ASCENDING)], unique=True, sparse=True, name="uq_formulary_portfolio_slug")
+    db.formulary_portfolio_items.create_index([("user_id", ASCENDING), ("occurred_on", DESCENDING)], name="ix_formulary_portfolio_items_user")
+    db.formulary_portfolio_items.create_index([("user_id", ASCENDING), ("category", ASCENDING), ("status", ASCENDING)], name="ix_formulary_portfolio_items_status")
+    db.formulary_attestations.create_index([("token_hash", ASCENDING)], unique=True, name="uq_formulary_attestation_token")
+    db.formulary_attestations.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_attestations_user")
     return db
