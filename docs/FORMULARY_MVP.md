@@ -60,6 +60,8 @@ FORMULARY_FREE_PK_RUN_LIMIT=3
 FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT=25
 FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT=1
 FORMULARY_FREE_COPILOT_DRAFT_LIMIT=3
+FORMULARY_FREE_JOURNAL_ROOM_LIMIT=2
+FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT=10
 FORMULARY_PDF_MAX_BYTES=12582912
 FORMULARY_LLM_MODEL=
 ```
@@ -75,6 +77,8 @@ FORMULARY_LLM_MODEL=
 - 25 residency/research portfolio items
 - 1 regulatory/grant copilot workspace
 - 3 generated copilot drafts
+- 2 Journal Club rooms
+- 10 evidence-grounded Journal Club fact checks
 
 ### Formulary Scholar
 
@@ -86,6 +90,7 @@ FORMULARY_LLM_MODEL=
 - unlimited residency/research portfolio tracking;
 - opt-in public portfolio and supervisor/preceptor attestations;
 - unlimited regulatory/grant copilot workspaces and drafts;
+- unlimited Journal Club rooms and fact checks;
 - future advanced modules as they launch.
 
 The listed price is currently ₦8,000/month but is environment-configurable.
@@ -189,11 +194,33 @@ Current curated source registry includes ICH E6(R3), ICH M4 CTD, ICH eCTD v4.0, 
 
 The researcher remains responsible for checking the current regulator, regional implementation documents, exact NOFO, institutional research office, ethics requirements and source text before submission.
 
+## Journal Club Live Room — implemented
+
+Route: `/formulary/journal`
+
+Journal Club rooms connect structured literature evidence with collaborative appraisal. Implemented features include:
+
+- room scheduling and scheduled/live/closed lifecycle;
+- optional external Zoom / Google Meet / Teams link;
+- private hashed invite tokens for authenticated participants;
+- invite rotation, room locking and host controls;
+- linked Formulary Living Review papers;
+- structured evidence table without exposing uploaded PDF bytes or private source excerpts;
+- general, randomized-trial and PK-study critical-appraisal templates;
+- collaborative notes, questions, claims, decisions and action items;
+- competency-independent discussion records with author and timestamps;
+- evidence-grounded claim fact checks restricted to papers linked to the room;
+- explicit supported / contradicted / mixed / unclear verdicts with confidence and `PAPER:entry-id` citations;
+- conservative deterministic fallback when the AI model is unavailable;
+- periodic refresh while a room is marked Live;
+- exportable Markdown meeting record;
+- protected deep-link return flow so invitees can sign in or create an account without losing the room invitation.
+
+The room shares structured article metadata/extractions, not the owner's uploaded PDF file or stored source excerpt. Important claims must still be verified against the original article.
+
 ## Roadmap
 
-### Phase 5 — Journal Club Live Room
-
-Shared paper room, structured extraction table, discussion notes and evidence checking during journal club.
+Future high-value additions can include native WebRTC/video, institutional cohorts, CE accreditation workflows, calendar invitations and organization analytics.
 
 ## Launch target
 
