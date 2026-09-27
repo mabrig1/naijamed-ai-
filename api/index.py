@@ -1967,6 +1967,339 @@ def formulary_copilot_generate_draft(
 
 
 
+
+def _journal_room_access(room_id: str, user: dict[str, Any]) -> dict[str, Any]:
+    user_id = str(user["_id"])
+    row = get_db().formulary_journal_rooms.find_one({"_id": room_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Journal Club room not found")
+    if user.get("role") == "admin":
+        return row
+    if row.get("owner_user_id") != user_id and user_id not in (row.get("member_user_ids") or []):
+        raise HTTPException(status_code=403, detail="You are not a member of this Journal Club room")
+    return row
+
+
+def _journal_room_entries(room: dict[str, Any]) -> list[dict[str, Any]]:
+    ids = list(room.get("entry_ids") or [])
+    if not ids:
+        return []
+    rows = list(
+        get_db().formulary_entries.find(
+            {
+                "_id": {"$in": ids},
+                "review_id": room.get("review_id"),
+                "user_id": room.get("owner_user_id"),
+            }
+        )
+    )
+    by_id = {row["_id"]: row for row in rows}
+    return [by_id[entry_id] for entry_id in ids if entry_id in by_id]
+
+
+def _journal_participants(room: dict[str, Any]) -> list[dict[str, Any]]:
+    ids = [room.get("owner_user_id")] + list(room.get("member_user_ids") or [])
+    output: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for user_id in ids:
+        if not user_id or user_id in seen:
+            continue
+        seen.add(user_id)
+        try:
+            user = get_db().users.find_one({"_id": ObjectId(str(user_id))})
+        except Exception:
+            user = None
+        output.append(
+            {
+                "user_id": str(user_id),
+                "name": user.get("full_name") if user else "Formulary participant",
+                "role": user.get("role") if user else None,
+                "host": str(user_id) == str(room.get("owner_user_id")),
+            }
+        )
+    return output
+
+
+def _journal_room_public(room: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": room["_id"],
+        "title": room.get("title"),
+        "review_id": room.get("review_id"),
+        "entry_ids": room.get("entry_ids", []),
+        "scheduled_at": room.get("scheduled_at").isoformat() if room.get("scheduled_at") else None,
+        "meeting_url": room.get("meeting_url"),
+        "agenda": room.get("agenda", []),
+        "appraisal_template": room.get("appraisal_template", "general"),
+        "status": room.get("status", "scheduled"),
+        "locked": bool(room.get("locked", False)),
+        "owner_user_id": room.get("owner_user_id"),
+        "member_count": len(room.get("member_user_ids") or []),
+        "created_at": room.get("created_at").isoformat() if room.get("created_at") else None,
+        "updated_at": room.get("updated_at").isoformat() if room.get("updated_at") else None,
+    }
+
+
+@app.get("/api/formulary/journal")
+def formulary_journal_home(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    user_id = str(user["_id"])
+    query = {"$or": [{"owner_user_id": user_id}, {"member_user_ids": user_id}]}
+    rows = get_db().formulary_journal_rooms.find(query).sort("updated_at", -1).limit(100)
+    return {"rooms": [_journal_room_public(row) for row in rows], "account": _formulary_account(user)}
+
+
+@app.post("/api/formulary/journal/rooms", status_code=201)
+def formulary_create_journal_room(
+    body: FormularyJournalRoomRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "journal_room")
+    user_id = str(user["_id"])
+    db = get_db()
+    review = db.formulary_reviews.find_one({"_id": body.review_id, "user_id": user_id})
+    if not review:
+        raise HTTPException(status_code=404, detail="Living Review not found")
+    entry_ids = list(dict.fromkeys(body.entry_ids))
+    entries = list(
+        db.formulary_entries.find(
+            {"_id": {"$in": entry_ids}, "review_id": body.review_id, "user_id": user_id}
+        )
+    )
+    found_ids = {row["_id"] for row in entries}
+    missing = [entry_id for entry_id in entry_ids if entry_id not in found_ids]
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Selected evidence entries are not in this review: {', '.join(missing)}")
+    if body.meeting_url and not re.match(r"^https?://", body.meeting_url, flags=re.I):
+        raise HTTPException(status_code=422, detail="Meeting URL must begin with http:// or https://")
+
+    raw_token = secrets.token_urlsafe(24)
+    room_id = f"FJR-{uuid.uuid4().hex[:14].upper()}"
+    now = _now()
+    row = {
+        "_id": room_id,
+        "owner_user_id": user_id,
+        "review_id": body.review_id,
+        "entry_ids": entry_ids,
+        "title": body.title.strip(),
+        "scheduled_at": body.scheduled_at,
+        "meeting_url": body.meeting_url,
+        "agenda": [item.strip() for item in body.agenda if item.strip()],
+        "appraisal_template": body.appraisal_template,
+        "status": "scheduled",
+        "locked": False,
+        "member_user_ids": [],
+        "join_token_hash": hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+        "created_at": now,
+        "updated_at": now,
+    }
+    db.formulary_journal_rooms.insert_one(row)
+    return {
+        "room": _journal_room_public(row),
+        "join_path": f"/formulary/journal/join/{raw_token}",
+        "notice": "Share the private join link only with intended participants. Joined members see structured evidence and discussion records, not the room owner's uploaded PDF bytes.",
+    }
+
+
+@app.post("/api/formulary/journal/rooms/{room_id}/invite")
+def formulary_rotate_journal_invite(room_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    room = _journal_room_access(room_id, user)
+    if room.get("owner_user_id") != str(user["_id"]) and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only the room host can create a new invite")
+    raw_token = secrets.token_urlsafe(24)
+    get_db().formulary_journal_rooms.update_one(
+        {"_id": room_id},
+        {"$set": {"join_token_hash": hashlib.sha256(raw_token.encode("utf-8")).hexdigest(), "updated_at": _now()}},
+    )
+    return {"join_path": f"/formulary/journal/join/{raw_token}"}
+
+
+@app.post("/api/formulary/journal/join")
+def formulary_join_journal_room(
+    body: FormularyJournalJoinRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    token_hash = hashlib.sha256(body.token.encode("utf-8")).hexdigest()
+    db = get_db()
+    room = db.formulary_journal_rooms.find_one({"join_token_hash": token_hash})
+    if not room:
+        raise HTTPException(status_code=404, detail="Journal Club invitation not found")
+    if room.get("locked"):
+        raise HTTPException(status_code=409, detail="This Journal Club room is locked")
+    if room.get("status") == "closed":
+        raise HTTPException(status_code=409, detail="This Journal Club room is closed")
+    user_id = str(user["_id"])
+    if user_id != room.get("owner_user_id"):
+        db.formulary_journal_rooms.update_one(
+            {"_id": room["_id"]},
+            {"$addToSet": {"member_user_ids": user_id}, "$set": {"updated_at": _now()}},
+        )
+    return {"room_id": room["_id"], "status": room.get("status", "scheduled")}
+
+
+@app.get("/api/formulary/journal/rooms/{room_id}")
+def formulary_journal_room_detail(room_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    room = _journal_room_access(room_id, user)
+    db = get_db()
+    entries = _journal_room_entries(room)
+    items = list(db.formulary_journal_items.find({"room_id": room_id}).sort("created_at", 1).limit(1000))
+    factchecks = list(db.formulary_journal_factchecks.find({"room_id": room_id}).sort("created_at", -1).limit(200))
+    return {
+        "room": _journal_room_public(room),
+        "participants": _journal_participants(room),
+        "evidence": evidence_snapshot(entries),
+        "appraisal_prompts": appraisal_template(room.get("appraisal_template")),
+        "items": [
+            {
+                "id": item["_id"],
+                "kind": item.get("kind"),
+                "content": item.get("content"),
+                "entry_id": item.get("entry_id"),
+                "appraisal_section": item.get("appraisal_section"),
+                "rating": item.get("rating"),
+                "assigned_to": item.get("assigned_to"),
+                "due_on": item.get("due_on"),
+                "created_by": item.get("created_by"),
+                "created_by_name": item.get("created_by_name"),
+                "created_at": item.get("created_at").isoformat() if item.get("created_at") else None,
+            }
+            for item in items
+        ],
+        "factchecks": [
+            {
+                "id": row["_id"],
+                "claim": row.get("claim"),
+                "verdict": row.get("verdict"),
+                "confidence": row.get("confidence"),
+                "rationale": row.get("rationale"),
+                "citations": row.get("citations", []),
+                "contradictory_points": row.get("contradictory_points", []),
+                "verification_steps": row.get("verification_steps", []),
+                "method": row.get("method"),
+                "requested_by_name": row.get("requested_by_name"),
+                "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+            }
+            for row in factchecks
+        ],
+        "account": _formulary_account(user),
+        "privacy_notice": "Room members can see structured evidence, metadata, discussion items and fact-check outputs. Uploaded PDF bytes and private source excerpts are not shared through the room.",
+    }
+
+
+@app.patch("/api/formulary/journal/rooms/{room_id}")
+def formulary_update_journal_room(
+    room_id: str,
+    body: FormularyJournalRoomUpdate,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    room = _journal_room_access(room_id, user)
+    if room.get("owner_user_id") != str(user["_id"]) and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only the room host can update room settings")
+    update = body.model_dump(exclude_none=True)
+    if update.get("meeting_url") and not re.match(r"^https?://", str(update["meeting_url"]), flags=re.I):
+        raise HTTPException(status_code=422, detail="Meeting URL must begin with http:// or https://")
+    if "agenda" in update:
+        update["agenda"] = [str(item).strip() for item in update["agenda"] if str(item).strip()]
+    update["updated_at"] = _now()
+    get_db().formulary_journal_rooms.update_one({"_id": room_id}, {"$set": update})
+    updated = get_db().formulary_journal_rooms.find_one({"_id": room_id})
+    return _journal_room_public(updated)
+
+
+@app.post("/api/formulary/journal/rooms/{room_id}/items", status_code=201)
+def formulary_add_journal_item(
+    room_id: str,
+    body: FormularyJournalItemRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    room = _journal_room_access(room_id, user)
+    if room.get("status") == "closed":
+        raise HTTPException(status_code=409, detail="This Journal Club room is closed")
+    if body.entry_id and body.entry_id not in (room.get("entry_ids") or []):
+        raise HTTPException(status_code=422, detail="The selected paper is not linked to this room")
+    if body.kind == "appraisal" and not body.appraisal_section:
+        raise HTTPException(status_code=422, detail="Appraisal items require an appraisal_section")
+    item_id = f"FJI-{uuid.uuid4().hex[:14].upper()}"
+    row = {
+        "_id": item_id,
+        "room_id": room_id,
+        "kind": body.kind,
+        "content": body.content.strip(),
+        "entry_id": body.entry_id,
+        "appraisal_section": body.appraisal_section,
+        "rating": body.rating,
+        "assigned_to": body.assigned_to,
+        "due_on": body.due_on.isoformat() if body.due_on else None,
+        "created_by": str(user["_id"]),
+        "created_by_name": user.get("full_name"),
+        "created_at": _now(),
+    }
+    get_db().formulary_journal_items.insert_one(row)
+    get_db().formulary_journal_rooms.update_one({"_id": room_id}, {"$set": {"updated_at": _now()}})
+    return {
+        "id": item_id,
+        "kind": row["kind"],
+        "content": row["content"],
+        "entry_id": row["entry_id"],
+        "appraisal_section": row["appraisal_section"],
+        "rating": row["rating"],
+        "assigned_to": row["assigned_to"],
+        "due_on": row["due_on"],
+        "created_by": row["created_by"],
+        "created_by_name": row["created_by_name"],
+        "created_at": row["created_at"].isoformat(),
+    }
+
+
+@app.post("/api/formulary/journal/rooms/{room_id}/fact-check", status_code=201)
+def formulary_journal_fact_check(
+    room_id: str,
+    body: FormularyJournalFactCheckRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "journal_factcheck")
+    room = _journal_room_access(room_id, user)
+    selected_ids = list(dict.fromkeys(body.entry_ids)) if body.entry_ids else list(room.get("entry_ids") or [])
+    invalid = [entry_id for entry_id in selected_ids if entry_id not in (room.get("entry_ids") or [])]
+    if invalid:
+        raise HTTPException(status_code=422, detail=f"Fact-check paper is not linked to this room: {', '.join(invalid)}")
+    entries = [row for row in _journal_room_entries(room) if row["_id"] in selected_ids]
+    result = fact_check_claim(body.claim.strip(), entries)
+    row = {
+        "_id": f"FJF-{uuid.uuid4().hex[:14].upper()}",
+        "room_id": room_id,
+        "claim": body.claim.strip(),
+        **result,
+        "entry_ids": selected_ids,
+        "evidence_snapshot": evidence_snapshot(entries),
+        "requested_by": str(user["_id"]),
+        "requested_by_name": user.get("full_name"),
+        "created_at": _now(),
+    }
+    get_db().formulary_journal_factchecks.insert_one(row)
+    get_db().formulary_journal_rooms.update_one({"_id": room_id}, {"$set": {"updated_at": _now()}})
+    return {
+        "id": row["_id"],
+        "claim": row["claim"],
+        "verdict": row["verdict"],
+        "confidence": row["confidence"],
+        "rationale": row["rationale"],
+        "citations": row["citations"],
+        "contradictory_points": row["contradictory_points"],
+        "verification_steps": row["verification_steps"],
+        "method": row["method"],
+        "requested_by_name": row["requested_by_name"],
+        "created_at": row["created_at"].isoformat(),
+    }
+
+
+
 # -------------------------- monetization ------------------------------------
 
 
