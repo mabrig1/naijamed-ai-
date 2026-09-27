@@ -84,7 +84,7 @@ function metricLabel(key: string) {
     tmax_simulated: "Simulated Tmax",
     auc_0_duration: "AUC₀–duration",
   };
-  return labels[key] ?? key.replaceAll("_", " ");
+  return labels[key] ?? key.replace(/_/g, " ");
 }
 
 function SimpleCurve({ points, title }: { points: Point[]; title: string }) {
