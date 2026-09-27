@@ -537,13 +537,16 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
     pro = user.get("role") == "admin" or _formulary_is_pro(user_id)
     review_count = get_db().formulary_reviews.count_documents({"user_id": user_id})
     paper_count = get_db().formulary_entries.count_documents({"user_id": user_id})
+    pk_run_count = get_db().formulary_pk_runs.count_documents({"user_id": user_id})
     return {
         "plan": "formulary_student" if pro else "free",
         "is_pro": pro,
         "review_count": review_count,
         "paper_count": paper_count,
+        "pk_run_count": pk_run_count,
         "review_limit": None if pro else settings.FORMULARY_FREE_REVIEW_LIMIT,
         "paper_limit": None if pro else settings.FORMULARY_FREE_PAPER_LIMIT,
+        "pk_run_limit": None if pro else settings.FORMULARY_FREE_PK_RUN_LIMIT,
         "upgrade_path": "/pricing",
     }
 
@@ -566,6 +569,13 @@ def _formulary_enforce_limit(user: dict[str, Any], resource: str) -> None:
             raise HTTPException(
                 status_code=402,
                 detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_PAPER_LIMIT} papers. Upgrade to Formulary Scholar for unlimited evidence entries.",
+            )
+    if resource == "pk_run":
+        used = db.formulary_pk_runs.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_PK_RUN_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_PK_RUN_LIMIT} saved PK/PD runs. Upgrade to Formulary Scholar for unlimited simulations.",
             )
 
 
@@ -874,9 +884,9 @@ def formulary_home(user: dict[str, Any] = Depends(current_user)):
                 "Living evidence table",
                 "Field-level correction provenance",
                 "Citation-watch refresh through OpenAlex",
+                "PK/PD Simulator: NCA and one-compartment models",
             ],
             "coming_next": [
-                "PK/PD Simulator",
                 "Rotation & Residency Tracker",
                 "Regulatory & Grant Copilot",
                 "Journal Club Live Room",
@@ -1111,6 +1121,123 @@ def formulary_refresh_citations(
         new_citations += len(additions)
     db.formulary_reviews.update_one({"_id": review_id}, {"$set": {"updated_at": _now()}})
     return {"review_id": review_id, "entries_refreshed": refreshed, "new_citations": new_citations}
+
+
+
+def _formulary_validate_pk_links(user: dict[str, Any], review_id: str | None, entry_id: str | None) -> None:
+    db = get_db()
+    user_id = str(user["_id"])
+    if review_id and not db.formulary_reviews.find_one({"_id": review_id, "user_id": user_id}):
+        raise HTTPException(status_code=404, detail="Linked Formulary review not found")
+    if entry_id:
+        query: dict[str, Any] = {"_id": entry_id, "user_id": user_id}
+        if review_id:
+            query["review_id"] = review_id
+        if not db.formulary_entries.find_one(query):
+            raise HTTPException(status_code=404, detail="Linked Formulary evidence entry not found")
+
+
+def _pk_run_public(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": row["_id"],
+        "kind": row.get("kind"),
+        "title": row.get("title"),
+        "review_id": row.get("review_id"),
+        "entry_id": row.get("entry_id"),
+        "input": row.get("input", {}),
+        "result": row.get("result", {}),
+        "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+    }
+
+
+@app.get("/api/formulary/pkpd/runs")
+def formulary_pk_runs(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    rows = get_db().formulary_pk_runs.find({"user_id": str(user["_id"])}).sort("created_at", -1).limit(50)
+    return {"runs": [_pk_run_public(row) for row in rows], "account": _formulary_account(user)}
+
+
+@app.post("/api/formulary/pkpd/nca", status_code=201)
+def formulary_pk_nca(body: FormularyPKNCARequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "pk_run")
+    _formulary_validate_pk_links(user, body.review_id, body.entry_id)
+    payload = body.model_dump()
+    observations = [{"time": row["time"], "concentration": row["concentration"]} for row in payload["observations"]]
+    try:
+        result = noncompartmental_analysis(
+            observations,
+            terminal_points=body.terminal_points,
+            dose=body.dose,
+            route=body.route,
+            time_unit=body.time_unit,
+            concentration_unit=body.concentration_unit,
+            dose_unit=body.dose_unit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    run_id = f"FPK-{uuid.uuid4().hex[:14].upper()}"
+    row = {
+        "_id": run_id,
+        "user_id": str(user["_id"]),
+        "kind": "nca",
+        "title": body.title.strip(),
+        "review_id": body.review_id,
+        "entry_id": body.entry_id,
+        "input": {
+            "observations": observations,
+            "terminal_points": body.terminal_points,
+            "dose": body.dose,
+            "route": body.route,
+            "time_unit": body.time_unit,
+            "concentration_unit": body.concentration_unit,
+            "dose_unit": body.dose_unit,
+        },
+        "result": result,
+        "created_at": _now(),
+    }
+    get_db().formulary_pk_runs.insert_one(row)
+    return _pk_run_public(row)
+
+
+@app.post("/api/formulary/pkpd/simulate", status_code=201)
+def formulary_pk_simulate(body: FormularyPKSimulationRequest, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "pk_run")
+    _formulary_validate_pk_links(user, body.review_id, body.entry_id)
+    try:
+        result = one_compartment_simulation(
+            model=body.model,
+            dose=body.dose,
+            volume=body.volume,
+            elimination_half_life=body.elimination_half_life,
+            duration=body.duration,
+            points=body.points,
+            bioavailability=body.bioavailability,
+            absorption_rate=body.absorption_rate,
+            time_unit=body.time_unit,
+            dose_unit=body.dose_unit,
+            volume_unit=body.volume_unit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    run_id = f"FPK-{uuid.uuid4().hex[:14].upper()}"
+    row = {
+        "_id": run_id,
+        "user_id": str(user["_id"]),
+        "kind": "simulation",
+        "title": body.title.strip(),
+        "review_id": body.review_id,
+        "entry_id": body.entry_id,
+        "input": body.model_dump(),
+        "result": result,
+        "created_at": _now(),
+    }
+    get_db().formulary_pk_runs.insert_one(row)
+    return _pk_run_public(row)
+
 
 
 # -------------------------- monetization ------------------------------------
