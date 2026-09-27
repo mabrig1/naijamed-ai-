@@ -2399,6 +2399,287 @@ def formulary_journal_fact_check(
 
 
 
+
+# -------------------------- Formulary Grant Project Studio -------------------
+
+def _grant_project_owner(project_id: str, user: dict[str, Any]) -> dict[str, Any]:
+    row = get_db().formulary_grant_projects.find_one({"_id": project_id, "user_id": str(user["_id"])})
+    if not row:
+        raise HTTPException(status_code=404, detail="Grant project not found")
+    return row
+
+
+def _grant_project_public(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": row["_id"],
+        "title": row.get("title"),
+        "acronym": row.get("acronym"),
+        "project_type": row.get("project_type"),
+        "originator_name": row.get("originator_name"),
+        "host_institution": row.get("host_institution"),
+        "country": row.get("country"),
+        "location": row.get("location"),
+        "duration_months": row.get("duration_months"),
+        "budget_amount": row.get("budget_amount"),
+        "budget_currency": row.get("budget_currency"),
+        "funder_name": row.get("funder_name"),
+        "call_reference": row.get("call_reference"),
+        "call_url": row.get("call_url"),
+        "deadline": row.get("deadline").isoformat() if row.get("deadline") else None,
+        "summary": row.get("summary"),
+        "problem_statement": row.get("problem_statement"),
+        "objectives": row.get("objectives", []),
+        "confidentiality_level": row.get("confidentiality_level", "controlled"),
+        "status": row.get("status", "concept"),
+        "template": project_template(str(row.get("project_type") or "flagship_research")),
+        "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+        "updated_at": row.get("updated_at").isoformat() if row.get("updated_at") else None,
+    }
+
+
+def _grant_collection_rows(collection_name: str, project_id: str) -> list[dict[str, Any]]:
+    db = get_db()
+    collection = getattr(db, collection_name)
+    if collection_name == "formulary_grant_workpackages":
+        return list(collection.find({"project_id": project_id}).sort("sequence", 1).limit(100))
+    if collection_name == "formulary_grant_milestones":
+        return list(collection.find({"project_id": project_id}).sort("due_on", 1).limit(200))
+    if collection_name == "formulary_grant_disclosures":
+        return list(collection.find({"project_id": project_id}).sort("disclosed_at", -1).limit(500))
+    return list(collection.find({"project_id": project_id}).sort("created_at", 1).limit(500))
+
+
+def _grant_related_public(row: dict[str, Any]) -> dict[str, Any]:
+    output: dict[str, Any] = {}
+    for key, value in row.items():
+        if key == "_id":
+            output["id"] = str(value)
+        elif isinstance(value, (datetime, date)):
+            output[key] = value.isoformat()
+        else:
+            output[key] = value
+    return output
+
+
+def _grant_project_bundle(project: dict[str, Any]) -> dict[str, Any]:
+    project_id = project["_id"]
+    partners = _grant_collection_rows("formulary_grant_partners", project_id)
+    work_packages = _grant_collection_rows("formulary_grant_workpackages", project_id)
+    milestones = _grant_collection_rows("formulary_grant_milestones", project_id)
+    ip_assets = _grant_collection_rows("formulary_grant_ip_assets", project_id)
+    disclosures = _grant_collection_rows("formulary_grant_disclosures", project_id)
+    readiness = readiness_assessment(
+        project,
+        partners=partners,
+        work_packages=work_packages,
+        milestones=milestones,
+        ip_assets=ip_assets,
+        disclosures=disclosures,
+    )
+    return {
+        "project": _grant_project_public(project),
+        "partners": [_grant_related_public(row) for row in partners],
+        "work_packages": [_grant_related_public(row) for row in normalize_percentages(work_packages, project.get("budget_amount"))],
+        "milestones": [_grant_related_public(row) for row in milestones],
+        "ip_assets": [_grant_related_public(row) for row in ip_assets],
+        "disclosures": [_grant_related_public(row) for row in disclosures],
+        "readiness": readiness,
+        "watermark": disclosure_watermark(project),
+    }
+
+
+@app.get("/api/formulary/grants")
+def formulary_grant_projects(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    user_id = str(user["_id"])
+    db = get_db()
+    rows = list(db.formulary_grant_projects.find({"user_id": user_id}).sort("updated_at", -1).limit(100))
+    projects = []
+    for row in rows:
+        bundle = _grant_project_bundle(row)
+        projects.append({
+            **bundle["project"],
+            "readiness": bundle["readiness"],
+            "partner_count": len(bundle["partners"]),
+            "work_package_count": len(bundle["work_packages"]),
+            "background_ip_count": len(bundle["ip_assets"]),
+            "disclosure_count": len(bundle["disclosures"]),
+        })
+    return {"projects": projects, "account": _formulary_account(user)}
+
+
+@app.post("/api/formulary/grants/projects", status_code=201)
+def formulary_create_grant_project(
+    body: FormularyGrantProjectRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "grant_project")
+    if body.call_url and not re.match(r"^https?://", body.call_url, flags=re.I):
+        raise HTTPException(status_code=422, detail="Call URL must begin with http:// or https://")
+    now = _now()
+    project_id = f"FGP-{uuid.uuid4().hex[:14].upper()}"
+    row = {
+        "_id": project_id,
+        "user_id": str(user["_id"]),
+        **body.model_dump(),
+        "objectives": [item.strip() for item in body.objectives if item.strip()],
+        "status": "concept",
+        "created_at": now,
+        "updated_at": now,
+    }
+    get_db().formulary_grant_projects.insert_one(row)
+    return _grant_project_bundle(row)
+
+
+@app.get("/api/formulary/grants/projects/{project_id}")
+def formulary_grant_project_detail(project_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    return _grant_project_bundle(_grant_project_owner(project_id, user))
+
+
+@app.patch("/api/formulary/grants/projects/{project_id}")
+def formulary_update_grant_project(
+    project_id: str,
+    body: FormularyGrantProjectUpdate,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    update = body.model_dump(exclude_none=True)
+    if update.get("call_url") and not re.match(r"^https?://", str(update["call_url"]), flags=re.I):
+        raise HTTPException(status_code=422, detail="Call URL must begin with http:// or https://")
+    if "objectives" in update:
+        update["objectives"] = [str(item).strip() for item in update["objectives"] if str(item).strip()]
+    update["updated_at"] = _now()
+    get_db().formulary_grant_projects.update_one({"_id": project_id, "user_id": str(user["_id"])}, {"$set": update})
+    return _grant_project_bundle(_grant_project_owner(project_id, user))
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/partners", status_code=201)
+def formulary_add_grant_partner(
+    project_id: str,
+    body: FormularyGrantPartnerRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    row = {
+        "_id": f"FGPART-{uuid.uuid4().hex[:12].upper()}",
+        "project_id": project_id,
+        "user_id": str(user["_id"]),
+        **body.model_dump(mode="json"),
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_grant_partners.insert_one(row)
+    get_db().formulary_grant_projects.update_one({"_id": project_id}, {"$set": {"updated_at": _now()}})
+    return _grant_related_public(row)
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/work-packages", status_code=201)
+def formulary_add_grant_work_package(
+    project_id: str,
+    body: FormularyGrantWorkPackageRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    row = {
+        "_id": f"FGWP-{uuid.uuid4().hex[:12].upper()}",
+        "project_id": project_id,
+        "user_id": str(user["_id"]),
+        **body.model_dump(),
+        "outputs": [item.strip() for item in body.outputs if item.strip()],
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_grant_workpackages.insert_one(row)
+    get_db().formulary_grant_projects.update_one({"_id": project_id}, {"$set": {"updated_at": _now()}})
+    return _grant_related_public(row)
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/milestones", status_code=201)
+def formulary_add_grant_milestone(
+    project_id: str,
+    body: FormularyGrantMilestoneRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    row = {
+        "_id": f"FGM-{uuid.uuid4().hex[:12].upper()}",
+        "project_id": project_id,
+        "user_id": str(user["_id"]),
+        **body.model_dump(),
+        "due_on": body.due_on.isoformat() if body.due_on else None,
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_grant_milestones.insert_one(row)
+    get_db().formulary_grant_projects.update_one({"_id": project_id}, {"$set": {"updated_at": _now()}})
+    return _grant_related_public(row)
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/ip-assets", status_code=201)
+def formulary_add_grant_ip_asset(
+    project_id: str,
+    body: FormularyGrantIPAssetRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    row = {
+        "_id": f"FGIP-{uuid.uuid4().hex[:12].upper()}",
+        "project_id": project_id,
+        "user_id": str(user["_id"]),
+        **body.model_dump(),
+        "created_at": _now(),
+    }
+    get_db().formulary_grant_ip_assets.insert_one(row)
+    get_db().formulary_grant_projects.update_one({"_id": project_id}, {"$set": {"updated_at": _now()}})
+    return _grant_related_public(row)
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/disclosures", status_code=201)
+def formulary_add_grant_disclosure(
+    project_id: str,
+    body: FormularyGrantDisclosureRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    project = _grant_project_owner(project_id, user)
+    row = {
+        "_id": f"FGD-{uuid.uuid4().hex[:12].upper()}",
+        "project_id": project_id,
+        "user_id": str(user["_id"]),
+        **body.model_dump(),
+        "watermark": disclosure_watermark(project, body.version),
+        "created_at": _now(),
+    }
+    get_db().formulary_grant_disclosures.insert_one(row)
+    get_db().formulary_grant_projects.update_one({"_id": project_id}, {"$set": {"updated_at": _now()}})
+    return _grant_related_public(row)
+
+
+@app.get("/api/formulary/grants/projects/{project_id}/readiness")
+def formulary_grant_project_readiness(project_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    return _grant_project_bundle(_grant_project_owner(project_id, user))["readiness"]
+
+
+@app.get("/api/formulary/grants/projects/{project_id}/disclosure-watermark")
+def formulary_grant_disclosure_watermark(
+    project_id: str,
+    version: str | None = None,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    project = _grant_project_owner(project_id, user)
+    return {"watermark": disclosure_watermark(project, version)}
+
+
+
 # -------------------------- monetization ------------------------------------
 
 
