@@ -15,6 +15,9 @@ const BioinformaticsServices    = lazy(() => import("./pages/research/Bioinforma
 const Pricing                   = lazy(() => import("./pages/Pricing"));
 const Formulary                 = lazy(() => import("./pages/Formulary"));
 const FormularyPKPD             = lazy(() => import("./pages/FormularyPKPD"));
+const FormularyPortfolio        = lazy(() => import("./pages/FormularyPortfolio"));
+const FormularyPublicPortfolio  = lazy(() => import("./pages/FormularyPublicPortfolio"));
+const FormularyAttestation      = lazy(() => import("./pages/FormularyAttestation"));
 const MonetizationAdmin         = lazy(() => import("./pages/admin/MonetizationAdmin"));
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
 const DiscoveryWorkbench        = lazy(() => import("./pages/discovery/DiscoveryWorkbench"));
@@ -86,6 +89,8 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/bioinformatics-services" element={<BioinformaticsServices />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/portfolio/:slug" element={<FormularyPublicPortfolio />} />
+        <Route path="/formulary/attest/:token" element={<FormularyAttestation />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 
@@ -95,6 +100,7 @@ export default function App() {
           <Route path="/research-studio" element={<ResearchStudio />} />
           <Route path="/formulary" element={<Formulary />} />
           <Route path="/formulary/pkpd" element={<FormularyPKPD />} />
+          <Route path="/formulary/portfolio" element={<FormularyPortfolio />} />
           <Route path="/research-commerce/admin" element={<ResearchCommerceAdmin />} />
           <Route path="/monetization/admin" element={<MonetizationAdmin />} />
           <Route path="/discovery" element={<DiscoveryWorkbench />} />
