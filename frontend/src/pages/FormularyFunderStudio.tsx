@@ -210,6 +210,7 @@ export default function FormularyFunderStudio() {
       const { data } = await api.put<any>(`/api/formulary/grants/projects/${projectId}/funder-profile`, payload);
       setProfile({ ...EMPTY, ...data.funder_profile });
       setReadiness(data.funder_readiness);
+      setLens(data.funder_readiness?.lens ?? null);
       setMessage("Funder-facing dossier saved and readiness lens recalculated.");
     } catch (err: unknown) {
       setError(detail(err));
