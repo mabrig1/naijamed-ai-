@@ -75,6 +75,18 @@ Default commercial tier: **Formulary Scholar — ₦8,000/month**, configurable 
 
 See `docs/FORMULARY_MVP.md` for architecture, research-integrity rules and rollout metrics.
 
+
+### Implemented Formulary modules
+
+- **Living Literature Review** — DOI/PDF evidence extraction, corrections and citation watch.
+- **PK/PD Simulator** — NCA and one-compartment educational/research simulations.
+- **Rotation & Research Portfolio** — PharmD/residency/postgraduate milestones with optional attestations.
+- **Regulatory & Grant Copilot** — source-grounded FDA/ICH/NIH drafting with traceable source snapshots.
+- **Journal Club Live Room** — collaborative critical appraisal, linked evidence, action items and evidence-grounded fact checks.
+
+Routes: `/formulary`, `/formulary/pkpd`, `/formulary/portfolio`, `/formulary/copilot`, `/formulary/journal`.
+
+
 ## Research & Discovery Studio
 
 NigerFlora includes a monetizable research-services layer for:
