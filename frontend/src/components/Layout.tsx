@@ -11,6 +11,7 @@ const PRIMARY_NAV: NavItem[] = [
   { to: "/bioinformatics-services", label: "💼 Bioinformatics" },
   { to: "/discovery", label: "🧪 Discovery" },
   { to: "/research-studio", label: "🧬 Research Studio" },
+  { to: "/formulary", label: "📚 Formulary" },
   { to: "/research", label: "📊 Research" },
   { to: "/herbs", label: "🌿 Herb Data" },
   { to: "/formulations", label: "🔬 Formulations" },
@@ -199,6 +200,7 @@ export default function Layout() {
                       <Link to="/bioinformatics-services" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💼 Order Bioinformatics Analysis</Link>
                       <Link to="/discovery" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧪 Discovery Workbench</Link>
                       <Link to="/formulary" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📚 Formulary Workspace</Link>
+                      <Link to="/formulary/portfolio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🎓 Research & Residency Portfolio</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
                       {String(user.role) === "admin" && <>
                         <Link to="/monetization/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📈 Monetization Dashboard</Link>
