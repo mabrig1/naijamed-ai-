@@ -265,3 +265,25 @@ Implemented capabilities:
 The readiness engine checks proposal substance, named funding target, deadline, work-package structure, budget reconciliation, consortium depth, international partner participation, partner commitment, milestones, background-IP evidence and disclosure controls.
 
 Important boundary: the Studio creates a dated operational/evidentiary trail. It does not by itself create patent rights, guarantee legal ownership or replace a signed NDA/MOU/IP agreement, funder rules, institutional policy or qualified legal review.
+
+
+### Funder Due-Diligence Room — implemented
+
+Protected builder route: `/formulary/grants/{project_id}/funder`
+
+Public controlled route: `/funder-room/{token}`
+
+This layer turns a managed grant project into a reviewer-facing investment case. It includes:
+
+- cross-funder preparation lens based on current public Horizon Europe, NIH and Wellcome evaluation structures;
+- editable narratives for innovation, global relevance, rigor/feasibility, impact pathway, institutional capacity, ethics/governance, data/open science, equity/capacity building, sustainability/scale, policy translation, monitoring/evaluation, risk and leverage;
+- measurable impact metrics, capacity outputs, data-management commitments and SDG alignment;
+- a deterministic funder-facing completeness score that explicitly is **not** a funding probability;
+- NEXUS-AMR Africa funder-narrative starter content;
+- frozen read-only dossier snapshots;
+- expiring tokenized links (maximum expiry controlled by `FORMULARY_GRANT_FUNDER_ROOM_MAX_DAYS`);
+- link revocation and access counts;
+- automatic disclosure-log entry when a funder room is created;
+- public view that intentionally excludes Background IP records, disclosure history, private contact emails and unpublished source files.
+
+Criteria references are versioned with a verification date in the app. Users must still verify the live call text, eligibility rules and scheme-specific review criteria before submission.
