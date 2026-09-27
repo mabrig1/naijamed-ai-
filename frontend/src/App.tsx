@@ -18,6 +18,7 @@ const FormularyPKPD             = lazy(() => import("./pages/FormularyPKPD"));
 const FormularyPortfolio        = lazy(() => import("./pages/FormularyPortfolio"));
 const FormularyPublicPortfolio  = lazy(() => import("./pages/FormularyPublicPortfolio"));
 const FormularyAttestation      = lazy(() => import("./pages/FormularyAttestation"));
+const FormularyCopilot          = lazy(() => import("./pages/FormularyCopilot"));
 const MonetizationAdmin         = lazy(() => import("./pages/admin/MonetizationAdmin"));
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
 const DiscoveryWorkbench        = lazy(() => import("./pages/discovery/DiscoveryWorkbench"));
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/formulary" element={<Formulary />} />
           <Route path="/formulary/pkpd" element={<FormularyPKPD />} />
           <Route path="/formulary/portfolio" element={<FormularyPortfolio />} />
+          <Route path="/formulary/copilot" element={<FormularyCopilot />} />
           <Route path="/research-commerce/admin" element={<ResearchCommerceAdmin />} />
           <Route path="/monetization/admin" element={<MonetizationAdmin />} />
           <Route path="/discovery" element={<DiscoveryWorkbench />} />
