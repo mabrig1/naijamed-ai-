@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app.formulary_grants import disclosure_watermark, readiness_assessment
+from app.formulary_grants import disclosure_watermark, funder_profile_assessment, readiness_assessment, safe_funder_snapshot
 
 
 class FormularyGrantStudioTests(unittest.TestCase):
@@ -97,5 +97,88 @@ class FormularyGrantStudioTests(unittest.TestCase):
         self.assertIn("v2.0", text)
 
 
-if __name__ == "__main__":
+    def test_funder_profile_is_completeness_not_prediction(self):
+        project = {
+            "_id": "FGP-FUNDER",
+            "title": "International Research Programme",
+            "country": "Nigeria",
+            "problem_statement": "Problem " * 80,
+            "objectives": ["One", "Two", "Three"],
+            "budget_amount": 1000000000,
+        }
+        profile = {
+            "funder_lens": "cross_funder",
+            "innovation_case": "Innovation " * 40,
+            "global_relevance": "Global relevance " * 30,
+            "rigor_feasibility": "Rigor and feasibility " * 30,
+            "impact_pathway": "Impact pathway " * 30,
+            "institutional_capacity": "Institutional capacity " * 30,
+            "ethics_governance": "Ethics and governance " * 30,
+            "data_open_science": "Data and open science " * 30,
+            "equity_capacity_building": "Equity and capacity " * 30,
+            "sustainability_scale": "Sustainability and scale " * 30,
+            "policy_translation": "Policy translation " * 30,
+            "monitoring_evaluation": "Monitoring and evaluation " * 30,
+            "risk_management": "Risk management " * 30,
+            "cofunding_leverage": "Leverage " * 30,
+            "impact_metrics": ["Metric"],
+            "capacity_outputs": ["Capacity"],
+            "data_management_commitments": ["DMP"],
+        }
+        result = funder_profile_assessment(
+            project,
+            profile,
+            partners=[
+                {"organization": "UNN", "country": "Nigeria", "status": "committed"},
+                {"organization": "Partner EU", "country": "Germany", "status": "interested"},
+                {"organization": "Partner Africa", "country": "Ghana", "status": "prospect"},
+            ],
+            work_packages=[
+                {"title": "WP1", "objective": "A", "outputs": ["O"]},
+                {"title": "WP2", "objective": "B", "outputs": ["O"]},
+                {"title": "WP3", "objective": "C", "outputs": ["O"]},
+            ],
+            milestones=[
+                {"title": "M1", "due_on": "2026-10-01"},
+                {"title": "M2", "due_on": "2026-11-01"},
+                {"title": "M3", "due_on": None},
+                {"title": "M4", "due_on": None},
+            ],
+        )
+        self.assertGreaterEqual(result["score"], 80)
+        self.assertIn("not a funding probability", result["notice"].lower())
+
+    def test_safe_funder_snapshot_does_not_include_private_ip_or_contacts(self):
+        snapshot = safe_funder_snapshot(
+            {
+                "_id": "FGP-PRIVATE",
+                "title": "Project",
+                "originator_name": "Originator",
+                "country": "Nigeria",
+                "budget_amount": 1000,
+                "budget_currency": "NGN",
+                "objectives": ["One", "Two", "Three"],
+                "problem_statement": "Problem " * 80,
+                "secret_internal_note": "DO NOT SHARE",
+            },
+            {"innovation_case": "Innovation " * 30},
+            partners=[{
+                "organization": "Partner",
+                "country": "Germany",
+                "partner_type": "university",
+                "status": "interested",
+                "proposed_role": "Genomics",
+                "contact_email": "private@example.org",
+                "lead_contact": "Private Person",
+            }],
+            work_packages=[],
+            milestones=[],
+        )
+        rendered = str(snapshot)
+        self.assertNotIn("secret_internal_note", rendered)
+        self.assertNotIn("DO NOT SHARE", rendered)
+        self.assertNotIn("private@example.org", rendered)
+        self.assertNotIn("Private Person", rendered)
+        self.assertIn("privacy_notice", snapshot)
+
     unittest.main()
