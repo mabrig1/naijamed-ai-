@@ -71,6 +71,7 @@ FORMULARY_FREE_COPILOT_DRAFT_LIMIT=3
 FORMULARY_FREE_JOURNAL_ROOM_LIMIT=2
 FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT=10
 FORMULARY_FREE_GRANT_PROJECT_LIMIT=1
+FORMULARY_GRANT_FUNDER_ROOM_MAX_DAYS=30
 CONSULT_PLATFORM_FEE_PERCENT=18
 FRONTEND_URL=https://nigerflora.mabrigkorie.org
 ```
@@ -134,3 +135,11 @@ Grant Project Studio health checks:
 - `POST /api/formulary/grants/projects` (authenticated)
 - `GET /api/formulary/grants/projects/{project_id}` (authenticated)
 - `GET /api/formulary/grants/projects/{project_id}/readiness` (authenticated)
+
+
+International grant / funder-room health checks:
+- `GET /api/formulary/grants/projects/{project_id}/funder-profile` (authenticated)
+- `PUT /api/formulary/grants/projects/{project_id}/funder-profile` (authenticated)
+- `POST /api/formulary/grants/projects/{project_id}/funder-rooms` (authenticated)
+- `GET /api/formulary/grants/projects/{project_id}/funder-rooms` (authenticated)
+- `GET /api/formulary/funder-room/{token}` (public tokenized read-only snapshot)
