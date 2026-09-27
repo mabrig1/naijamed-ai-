@@ -181,4 +181,6 @@ class FormularyGrantStudioTests(unittest.TestCase):
         self.assertNotIn("Private Person", rendered)
         self.assertIn("privacy_notice", snapshot)
 
+
+if __name__ == "__main__":
     unittest.main()
