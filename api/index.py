@@ -656,6 +656,8 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
     portfolio_item_count = get_db().formulary_portfolio_items.count_documents({"user_id": user_id})
     copilot_workspace_count = get_db().formulary_copilot_workspaces.count_documents({"user_id": user_id})
     copilot_draft_count = get_db().formulary_copilot_drafts.count_documents({"user_id": user_id})
+    journal_room_count = get_db().formulary_journal_rooms.count_documents({"owner_user_id": user_id})
+    journal_factcheck_count = get_db().formulary_journal_factchecks.count_documents({"requested_by": user_id})
     return {
         "plan": "formulary_student" if pro else "free",
         "is_pro": pro,
@@ -665,12 +667,16 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
         "portfolio_item_count": portfolio_item_count,
         "copilot_workspace_count": copilot_workspace_count,
         "copilot_draft_count": copilot_draft_count,
+        "journal_room_count": journal_room_count,
+        "journal_factcheck_count": journal_factcheck_count,
         "review_limit": None if pro else settings.FORMULARY_FREE_REVIEW_LIMIT,
         "paper_limit": None if pro else settings.FORMULARY_FREE_PAPER_LIMIT,
         "pk_run_limit": None if pro else settings.FORMULARY_FREE_PK_RUN_LIMIT,
         "portfolio_item_limit": None if pro else settings.FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT,
         "copilot_workspace_limit": None if pro else settings.FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT,
         "copilot_draft_limit": None if pro else settings.FORMULARY_FREE_COPILOT_DRAFT_LIMIT,
+        "journal_room_limit": None if pro else settings.FORMULARY_FREE_JOURNAL_ROOM_LIMIT,
+        "journal_factcheck_limit": None if pro else settings.FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT,
         "upgrade_path": "/pricing",
     }
 
@@ -721,6 +727,20 @@ def _formulary_enforce_limit(user: dict[str, Any], resource: str) -> None:
             raise HTTPException(
                 status_code=402,
                 detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_COPILOT_DRAFT_LIMIT} generated copilot drafts. Upgrade to Formulary Scholar for unlimited drafting.",
+            )
+    if resource == "journal_room":
+        used = db.formulary_journal_rooms.count_documents({"owner_user_id": user_id})
+        if used >= settings.FORMULARY_FREE_JOURNAL_ROOM_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_JOURNAL_ROOM_LIMIT} Journal Club rooms. Upgrade to Formulary Scholar for unlimited rooms.",
+            )
+    if resource == "journal_factcheck":
+        used = db.formulary_journal_factchecks.count_documents({"requested_by": user_id})
+        if used >= settings.FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT} Journal Club fact checks. Upgrade to Formulary Scholar for unlimited checks.",
             )
 
 
@@ -1032,10 +1052,9 @@ def formulary_home(user: dict[str, Any] = Depends(current_user)):
                 "PK/PD Simulator: NCA and one-compartment models",
                 "Rotation & Research Portfolio Tracker",
                 "Regulatory & Grant Copilot with source traceability",
+                "Journal Club Live Room with evidence-grounded fact checks",
             ],
-            "coming_next": [
-                "Journal Club Live Room",
-            ],
+            "coming_next": [],
         },
     }
 
@@ -2032,7 +2051,7 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
     if "formulary_student" in active_plan_ids:
-        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot"})
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot", "journal_club_live_rooms"})
     return sorted(entitlements)
 
 
