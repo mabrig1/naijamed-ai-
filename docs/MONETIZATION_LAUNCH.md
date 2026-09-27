@@ -70,6 +70,7 @@ FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT=1
 FORMULARY_FREE_COPILOT_DRAFT_LIMIT=3
 FORMULARY_FREE_JOURNAL_ROOM_LIMIT=2
 FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT=10
+FORMULARY_FREE_GRANT_PROJECT_LIMIT=1
 CONSULT_PLATFORM_FEE_PERCENT=18
 FRONTEND_URL=https://nigerflora.mabrigkorie.org
 ```
@@ -126,3 +127,10 @@ Do not treat a green frontend Vercel build as proof that the Python endpoints ar
 - `POST /api/clinical/subscriptions/checkout`
 - `POST /api/formulary/pkpd/nca`
 
+
+
+Grant Project Studio health checks:
+- `GET /api/formulary/grants` (authenticated)
+- `POST /api/formulary/grants/projects` (authenticated)
+- `GET /api/formulary/grants/projects/{project_id}` (authenticated)
+- `GET /api/formulary/grants/projects/{project_id}/readiness` (authenticated)
