@@ -1652,6 +1652,265 @@ def formulary_public_portfolio(slug: str):
 
 
 
+
+def _copilot_evidence_rows(user_id: str, review_ids: list[str]) -> list[dict[str, Any]]:
+    db = get_db()
+    rows: list[dict[str, Any]] = []
+    for review_id in review_ids:
+        review = db.formulary_reviews.find_one({"_id": review_id, "user_id": user_id})
+        if not review:
+            raise HTTPException(status_code=404, detail=f"Formulary review not found: {review_id}")
+        entries = db.formulary_entries.find({"review_id": review_id, "user_id": user_id}).sort("created_at", -1).limit(25)
+        rows.extend(build_evidence_source(entry) for entry in entries)
+        if len(rows) >= 50:
+            break
+    return rows[:50]
+
+
+def _copilot_custom_rows(workspace: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for index, source in enumerate(workspace.get("custom_sources") or [], start=1):
+        rows.append(
+            {
+                "id": source.get("id") or f"custom:{workspace['_id']}:{index}",
+                "organization": "User-supplied source",
+                "title": source.get("title") or f"Custom source {index}",
+                "status": source.get("status") or "user_supplied",
+                "issued": None,
+                "url": source.get("url"),
+                "topic": "user_source",
+                "summary": source.get("excerpt") or "",
+            }
+        )
+    return rows
+
+
+def _copilot_workspace_public(row: dict[str, Any], *, include_sources: bool = False) -> dict[str, Any]:
+    output = {
+        "id": row["_id"],
+        "title": row.get("title"),
+        "purpose": row.get("purpose"),
+        "objective": row.get("objective"),
+        "jurisdiction": row.get("jurisdiction"),
+        "nofo_url": row.get("nofo_url"),
+        "official_source_ids": row.get("official_source_ids", []),
+        "review_ids": row.get("review_ids", []),
+        "notes": row.get("notes"),
+        "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+        "updated_at": row.get("updated_at").isoformat() if row.get("updated_at") else None,
+    }
+    if include_sources:
+        output["custom_sources"] = row.get("custom_sources", [])
+    return output
+
+
+@app.get("/api/formulary/copilot/sources")
+def formulary_copilot_sources(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    user_id = str(user["_id"])
+    reviews = get_db().formulary_reviews.find({"user_id": user_id}).sort("updated_at", -1).limit(100)
+    return {
+        "official_sources": official_sources(),
+        "reviews": [
+            {
+                "id": row["_id"],
+                "title": row.get("title"),
+                "research_question": row.get("research_question"),
+                "paper_count": get_db().formulary_entries.count_documents({"review_id": row["_id"], "user_id": user_id}),
+            }
+            for row in reviews
+        ],
+        "account": _formulary_account(user),
+        "source_policy": {
+            "official": "Official source metadata is curated and carries final/draft/current-instructions status.",
+            "literature": "Formulary review papers are grounded from the user's structured evidence library.",
+            "custom": "Custom source excerpts are used only when the user supplies them; Formulary does not assume the URL contents.",
+        },
+    }
+
+
+@app.get("/api/formulary/copilot")
+def formulary_copilot_home(user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    user_id = str(user["_id"])
+    db = get_db()
+    rows = db.formulary_copilot_workspaces.find({"user_id": user_id}).sort("updated_at", -1).limit(100)
+    workspaces = []
+    for row in rows:
+        payload = _copilot_workspace_public(row)
+        payload["draft_count"] = db.formulary_copilot_drafts.count_documents({"user_id": user_id, "workspace_id": row["_id"]})
+        workspaces.append(payload)
+    return {"workspaces": workspaces, "account": _formulary_account(user)}
+
+
+@app.post("/api/formulary/copilot/workspaces", status_code=201)
+def formulary_create_copilot_workspace(
+    body: FormularyCopilotWorkspaceRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "copilot_workspace")
+    user_id = str(user["_id"])
+
+    if body.nofo_url and not re.match(r"^https?://", body.nofo_url, flags=re.I):
+        raise HTTPException(status_code=422, detail="NOFO / source URL must begin with http:// or https://")
+    known = {row["id"] for row in official_sources()}
+    unknown = [source_id for source_id in body.official_source_ids if source_id not in known]
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Unknown official source IDs: {', '.join(unknown)}")
+
+    _copilot_evidence_rows(user_id, body.review_ids)
+    workspace_id = f"FCW-{uuid.uuid4().hex[:14].upper()}"
+    custom_sources = []
+    for index, source in enumerate(body.custom_sources, start=1):
+        if source.url and not re.match(r"^https?://", source.url, flags=re.I):
+            raise HTTPException(status_code=422, detail=f"Custom source {index} URL must begin with http:// or https://")
+        custom_sources.append(
+            {
+                "id": f"custom:{workspace_id}:{index}",
+                "title": source.title.strip(),
+                "url": source.url,
+                "excerpt": source.excerpt.strip(),
+                "status": source.status.strip() or "user_supplied",
+            }
+        )
+
+    row = {
+        "_id": workspace_id,
+        "user_id": user_id,
+        "title": body.title.strip(),
+        "purpose": body.purpose,
+        "objective": body.objective.strip(),
+        "jurisdiction": body.jurisdiction,
+        "nofo_url": body.nofo_url,
+        "official_source_ids": list(dict.fromkeys(body.official_source_ids)),
+        "review_ids": list(dict.fromkeys(body.review_ids)),
+        "custom_sources": custom_sources,
+        "notes": body.notes,
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().formulary_copilot_workspaces.insert_one(row)
+    return _copilot_workspace_public(row, include_sources=True)
+
+
+@app.get("/api/formulary/copilot/workspaces/{workspace_id}")
+def formulary_copilot_workspace(workspace_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    user_id = str(user["_id"])
+    db = get_db()
+    row = db.formulary_copilot_workspaces.find_one({"_id": workspace_id, "user_id": user_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Regulatory / grant workspace not found")
+    drafts = db.formulary_copilot_drafts.find({"workspace_id": workspace_id, "user_id": user_id}).sort("created_at", -1).limit(50)
+    return {
+        "workspace": _copilot_workspace_public(row, include_sources=True),
+        "drafts": [
+            {
+                "id": draft["_id"],
+                "purpose": draft.get("purpose"),
+                "content": draft.get("content"),
+                "generation_method": draft.get("generation_method"),
+                "cited_source_ids": draft.get("cited_source_ids", []),
+                "source_snapshot": draft.get("source_snapshot", []),
+                "gap_check": draft.get("gap_check", []),
+                "created_at": draft.get("created_at").isoformat() if draft.get("created_at") else None,
+            }
+            for draft in drafts
+        ],
+        "account": _formulary_account(user),
+    }
+
+
+@app.get("/api/formulary/copilot/workspaces/{workspace_id}/gap-check")
+def formulary_copilot_gap_check(workspace_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    user_id = str(user["_id"])
+    row = get_db().formulary_copilot_workspaces.find_one({"_id": workspace_id, "user_id": user_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Regulatory / grant workspace not found")
+    official_rows = validate_source_ids(row.get("official_source_ids") or [])
+    evidence_rows = _copilot_evidence_rows(user_id, row.get("review_ids") or []) + _copilot_custom_rows(row)
+    gaps = deterministic_gap_check(
+        purpose=str(row.get("purpose")),
+        official_rows=official_rows,
+        evidence_rows=evidence_rows,
+        nofo_url=row.get("nofo_url"),
+    )
+    return {"workspace_id": workspace_id, "gaps": gaps, "source_count": len(official_rows) + len(evidence_rows)}
+
+
+@app.post("/api/formulary/copilot/workspaces/{workspace_id}/draft", status_code=201)
+def formulary_copilot_generate_draft(
+    workspace_id: str,
+    body: FormularyCopilotDraftRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _formulary_enforce_limit(user, "copilot_draft")
+    user_id = str(user["_id"])
+    db = get_db()
+    workspace = db.formulary_copilot_workspaces.find_one({"_id": workspace_id, "user_id": user_id})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Regulatory / grant workspace not found")
+
+    official_rows = validate_source_ids(workspace.get("official_source_ids") or [])
+    evidence_rows = _copilot_evidence_rows(user_id, workspace.get("review_ids") or [])
+    custom_rows = _copilot_custom_rows(workspace)
+    grounding_rows = evidence_rows + custom_rows
+    gaps = deterministic_gap_check(
+        purpose=str(workspace.get("purpose")),
+        official_rows=official_rows,
+        evidence_rows=grounding_rows,
+        nofo_url=workspace.get("nofo_url"),
+    )
+    notes_parts = []
+    if workspace.get("jurisdiction"):
+        notes_parts.append(f"Target jurisdiction / regulator: {workspace['jurisdiction']}")
+    if workspace.get("notes"):
+        notes_parts.append(str(workspace["notes"]))
+    if body.instruction:
+        notes_parts.append(f"Draft instruction: {body.instruction}")
+    content, generation_method, cited_ids = generate_grounded_draft(
+        purpose=str(workspace["purpose"]),
+        title=str(workspace["title"]),
+        objective=str(workspace["objective"]),
+        notes="\n\n".join(notes_parts) or None,
+        nofo_url=workspace.get("nofo_url"),
+        official_rows=official_rows,
+        evidence_rows=grounding_rows,
+        gaps=gaps,
+    )
+    snapshot = official_rows + grounding_rows
+    draft_id = f"FCD-{uuid.uuid4().hex[:14].upper()}"
+    draft = {
+        "_id": draft_id,
+        "user_id": user_id,
+        "workspace_id": workspace_id,
+        "purpose": workspace["purpose"],
+        "content": content,
+        "generation_method": generation_method,
+        "cited_source_ids": cited_ids,
+        "source_snapshot": snapshot,
+        "gap_check": gaps,
+        "instruction": body.instruction,
+        "created_at": _now(),
+    }
+    db.formulary_copilot_drafts.insert_one(draft)
+    db.formulary_copilot_workspaces.update_one({"_id": workspace_id}, {"$set": {"updated_at": _now()}})
+    return {
+        "id": draft_id,
+        "workspace_id": workspace_id,
+        "content": content,
+        "generation_method": generation_method,
+        "cited_source_ids": cited_ids,
+        "source_snapshot": snapshot,
+        "gap_check": gaps,
+        "created_at": draft["created_at"].isoformat(),
+    }
+
+
+
 # -------------------------- monetization ------------------------------------
 
 
