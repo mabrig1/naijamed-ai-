@@ -728,6 +728,7 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
     copilot_draft_count = get_db().formulary_copilot_drafts.count_documents({"user_id": user_id})
     journal_room_count = get_db().formulary_journal_rooms.count_documents({"owner_user_id": user_id})
     journal_factcheck_count = get_db().formulary_journal_factchecks.count_documents({"requested_by": user_id})
+    grant_project_count = get_db().formulary_grant_projects.count_documents({"user_id": user_id})
     return {
         "plan": "formulary_student" if pro else "free",
         "is_pro": pro,
@@ -739,6 +740,7 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
         "copilot_draft_count": copilot_draft_count,
         "journal_room_count": journal_room_count,
         "journal_factcheck_count": journal_factcheck_count,
+        "grant_project_count": grant_project_count,
         "review_limit": None if pro else settings.FORMULARY_FREE_REVIEW_LIMIT,
         "paper_limit": None if pro else settings.FORMULARY_FREE_PAPER_LIMIT,
         "pk_run_limit": None if pro else settings.FORMULARY_FREE_PK_RUN_LIMIT,
@@ -747,6 +749,7 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
         "copilot_draft_limit": None if pro else settings.FORMULARY_FREE_COPILOT_DRAFT_LIMIT,
         "journal_room_limit": None if pro else settings.FORMULARY_FREE_JOURNAL_ROOM_LIMIT,
         "journal_factcheck_limit": None if pro else settings.FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT,
+        "grant_project_limit": None if pro else settings.FORMULARY_FREE_GRANT_PROJECT_LIMIT,
         "upgrade_path": "/pricing",
     }
 
@@ -811,6 +814,13 @@ def _formulary_enforce_limit(user: dict[str, Any], resource: str) -> None:
             raise HTTPException(
                 status_code=402,
                 detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT} Journal Club fact checks. Upgrade to Formulary Scholar for unlimited checks.",
+            )
+    if resource == "grant_project":
+        used = db.formulary_grant_projects.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_GRANT_PROJECT_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_GRANT_PROJECT_LIMIT} International Grant Project. Upgrade to Formulary Scholar for unlimited projects.",
             )
 
 
