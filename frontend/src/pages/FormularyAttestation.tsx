@@ -47,11 +47,11 @@ export default function FormularyAttestation() {
       .catch((err: unknown) => setError(detail(err)));
   }, [token]);
 
-  async function submit() {
+  async function submit(attest: boolean) {
     setSubmitting(true);
     setError("");
     try {
-      const { data: result } = await api.post<{ status: string; message: string }>(`/api/formulary/attest/${encodeURIComponent(token)}`, form);
+      const { data: result } = await api.post<{ status: string; message: string }>(`/api/formulary/attest/${encodeURIComponent(token)}`, { ...form, attest });
       setMessage(result.message);
       setData((current) => current ? { ...current, status: result.status } : current);
     } catch (err: unknown) {
@@ -97,8 +97,8 @@ export default function FormularyAttestation() {
               </div>
               <textarea className="input min-h-24" value={form.comment} onChange={(e) => setForm((v) => ({ ...v, comment: e.target.value }))} placeholder="Optional comment" />
               <div className="grid gap-3 sm:grid-cols-2">
-                <button className="btn-primary" disabled={submitting || !form.verifier_name || !form.verifier_email} onClick={() => { setForm((v) => ({ ...v, attest: true })); setTimeout(submit, 0); }}>Attest record</button>
-                <button className="btn-outline" disabled={submitting || !form.verifier_name || !form.verifier_email} onClick={() => { setForm((v) => ({ ...v, attest: false })); setTimeout(submit, 0); }}>Decline</button>
+                <button className="btn-primary" disabled={submitting || !form.verifier_name || !form.verifier_email} onClick={() => submit(true)}>Attest record</button>
+                <button className="btn-outline" disabled={submitting || !form.verifier_name || !form.verifier_email} onClick={() => submit(false)}>Decline</button>
               </div>
             </div>
           </section>
