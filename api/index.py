@@ -617,6 +617,8 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
     paper_count = get_db().formulary_entries.count_documents({"user_id": user_id})
     pk_run_count = get_db().formulary_pk_runs.count_documents({"user_id": user_id})
     portfolio_item_count = get_db().formulary_portfolio_items.count_documents({"user_id": user_id})
+    copilot_workspace_count = get_db().formulary_copilot_workspaces.count_documents({"user_id": user_id})
+    copilot_draft_count = get_db().formulary_copilot_drafts.count_documents({"user_id": user_id})
     return {
         "plan": "formulary_student" if pro else "free",
         "is_pro": pro,
@@ -624,10 +626,14 @@ def _formulary_account(user: dict[str, Any]) -> dict[str, Any]:
         "paper_count": paper_count,
         "pk_run_count": pk_run_count,
         "portfolio_item_count": portfolio_item_count,
+        "copilot_workspace_count": copilot_workspace_count,
+        "copilot_draft_count": copilot_draft_count,
         "review_limit": None if pro else settings.FORMULARY_FREE_REVIEW_LIMIT,
         "paper_limit": None if pro else settings.FORMULARY_FREE_PAPER_LIMIT,
         "pk_run_limit": None if pro else settings.FORMULARY_FREE_PK_RUN_LIMIT,
         "portfolio_item_limit": None if pro else settings.FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT,
+        "copilot_workspace_limit": None if pro else settings.FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT,
+        "copilot_draft_limit": None if pro else settings.FORMULARY_FREE_COPILOT_DRAFT_LIMIT,
         "upgrade_path": "/pricing",
     }
 
@@ -664,6 +670,20 @@ def _formulary_enforce_limit(user: dict[str, Any], resource: str) -> None:
             raise HTTPException(
                 status_code=402,
                 detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT} portfolio items. Upgrade to Formulary Scholar for unlimited tracking.",
+            )
+    if resource == "copilot_workspace":
+        used = db.formulary_copilot_workspaces.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT} regulatory/grant workspace. Upgrade to Formulary Scholar for unlimited workspaces.",
+            )
+    if resource == "copilot_draft":
+        used = db.formulary_copilot_drafts.count_documents({"user_id": user_id})
+        if used >= settings.FORMULARY_FREE_COPILOT_DRAFT_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free Formulary accounts support {settings.FORMULARY_FREE_COPILOT_DRAFT_LIMIT} generated copilot drafts. Upgrade to Formulary Scholar for unlimited drafting.",
             )
 
 
@@ -974,9 +994,9 @@ def formulary_home(user: dict[str, Any] = Depends(current_user)):
                 "Citation-watch refresh through OpenAlex",
                 "PK/PD Simulator: NCA and one-compartment models",
                 "Rotation & Research Portfolio Tracker",
+                "Regulatory & Grant Copilot with source traceability",
             ],
             "coming_next": [
-                "Regulatory & Grant Copilot",
                 "Journal Club Live Room",
             ],
         },
@@ -1716,7 +1736,7 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
     if "formulary_student" in active_plan_ids:
-        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio"})
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot"})
     return sorted(entitlements)
 
 
