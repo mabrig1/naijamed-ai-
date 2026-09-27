@@ -76,4 +76,6 @@ def get_db() -> Database:
     db.formulary_portfolio_items.create_index([("user_id", ASCENDING), ("category", ASCENDING), ("status", ASCENDING)], name="ix_formulary_portfolio_items_status")
     db.formulary_attestations.create_index([("token_hash", ASCENDING)], unique=True, name="uq_formulary_attestation_token")
     db.formulary_attestations.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_attestations_user")
+    db.formulary_copilot_workspaces.create_index([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_copilot_workspaces_user")
+    db.formulary_copilot_drafts.create_index([("user_id", ASCENDING), ("workspace_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_copilot_drafts_user")
     return db
