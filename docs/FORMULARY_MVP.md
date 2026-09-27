@@ -62,6 +62,7 @@ FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT=1
 FORMULARY_FREE_COPILOT_DRAFT_LIMIT=3
 FORMULARY_FREE_JOURNAL_ROOM_LIMIT=2
 FORMULARY_FREE_JOURNAL_FACTCHECK_LIMIT=10
+FORMULARY_FREE_GRANT_PROJECT_LIMIT=1
 FORMULARY_PDF_MAX_BYTES=12582912
 FORMULARY_LLM_MODEL=
 ```
@@ -236,3 +237,31 @@ Initial pilot:
 - team/institution invite demand.
 
 The key KPI is not raw uploads. It is **researchers returning to the same structured evidence workspace every week**.
+
+
+## International Grant Project Studio — implemented
+
+Route: `/formulary/grants`
+
+The Grant Project Studio moves large international research projects beyond a single draft into a managed programme workspace.
+
+Implemented capabilities:
+
+- flagship, consortium, implementation, fellowship and infrastructure project types;
+- project originator, proposed host, country/location, duration and total budget;
+- funder, call reference, official call URL and deadline tracking;
+- executive summary, problem statement and specific objectives;
+- concept → institutional engagement → consortium building → drafting → review → submission lifecycle;
+- consortium partner map with country, type, contact, proposed role and commitment status;
+- work-package architecture with sequence, lead, objectives, outputs and budget;
+- automatic work-package budget reconciliation against total project budget;
+- critical-path milestones with owner, due date and status;
+- Background IP / pre-existing asset register;
+- controlled-disclosure ledger recording recipient, organisation, date, material/version, purpose and confidentiality basis;
+- generated controlled-disclosure watermark;
+- deterministic grant-readiness assessment with explicit gaps and risk flags;
+- NEXUS-AMR Africa starter template for the current UNN/Nsukka flagship concept.
+
+The readiness engine checks proposal substance, named funding target, deadline, work-package structure, budget reconciliation, consortium depth, international partner participation, partner commitment, milestones, background-IP evidence and disclosure controls.
+
+Important boundary: the Studio creates a dated operational/evidentiary trail. It does not by itself create patent rights, guarantee legal ownership or replace a signed NDA/MOU/IP agreement, funder rules, institutional policy or qualified legal review.
