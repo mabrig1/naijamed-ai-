@@ -2906,6 +2906,8 @@ def formulary_public_funder_room(token: str):
     if row.get("revoked"):
         raise HTTPException(status_code=410, detail="This funder room has been revoked")
     expires_at = row.get("expires_at")
+    if isinstance(expires_at, datetime) and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
     if not expires_at or expires_at < _now():
         raise HTTPException(status_code=410, detail="This funder room has expired")
     db.formulary_grant_funder_rooms.update_one(
