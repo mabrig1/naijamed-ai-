@@ -68,4 +68,6 @@ def get_db() -> Database:
     db.formulary_entries.create_index([("review_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_entries_review")
     db.formulary_entries.create_index([("user_id", ASCENDING), ("doi", ASCENDING)], sparse=True, name="ix_formulary_entries_user_doi")
     db.formulary_entries.create_index([("openalex_id", ASCENDING)], sparse=True, name="ix_formulary_entries_openalex")
+    db.formulary_pk_runs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_pk_runs_user")
+    db.formulary_pk_runs.create_index([("review_id", ASCENDING), ("created_at", DESCENDING)], sparse=True, name="ix_formulary_pk_runs_review")
     return db
