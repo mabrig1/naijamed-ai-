@@ -3003,6 +3003,7 @@ def _clinical_plan_catalog() -> dict[str, dict[str, Any]]:
                 "Source-grounded regulatory & grant copilot",
                 "Journal Club Live Rooms with evidence-grounded fact checks",
                 "International Grant Project Studio with consortium, IP and disclosure tracking",
+                "Funder Due-Diligence Rooms with frozen expiring project snapshots",
             ],
         },
     }
@@ -3015,7 +3016,7 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
     if "formulary_student" in active_plan_ids:
-        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot", "journal_club_live_rooms", "international_grant_project_studio"})
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot", "journal_club_live_rooms", "international_grant_project_studio", "funder_due_diligence_rooms"})
     return sorted(entitlements)
 
 
