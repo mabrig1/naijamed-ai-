@@ -1152,6 +1152,7 @@ def formulary_home(user: dict[str, Any] = Depends(current_user)):
                 "Rotation & Research Portfolio Tracker",
                 "Regulatory & Grant Copilot with source traceability",
                 "Journal Club Live Room with evidence-grounded fact checks",
+                "International Grant Project Studio with IP/disclosure controls",
             ],
             "coming_next": [],
         },
@@ -2754,6 +2755,7 @@ def _clinical_plan_catalog() -> dict[str, dict[str, Any]]:
                 "Residency & research portfolio with attestations",
                 "Source-grounded regulatory & grant copilot",
                 "Journal Club Live Rooms with evidence-grounded fact checks",
+                "International Grant Project Studio with consortium, IP and disclosure tracking",
             ],
         },
     }
@@ -2766,7 +2768,7 @@ def _subscription_entitlements(active_plan_ids: list[str]) -> list[str]:
     if "doctor_workspace" in active_plan_ids:
         entitlements.update({"doctor_workspace", "clinical_scribing", "provider_payments", "case_audit_history"})
     if "formulary_student" in active_plan_ids:
-        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot", "journal_club_live_rooms"})
+        entitlements.update({"formulary_pro", "unlimited_literature_reviews", "citation_watch", "structured_pdf_extraction", "pkpd_simulator", "unlimited_portfolio", "public_portfolio", "regulatory_grant_copilot", "journal_club_live_rooms", "international_grant_project_studio"})
     return sorted(entitlements)
 
 
