@@ -82,4 +82,10 @@ def get_db() -> Database:
     db.formulary_journal_rooms.create_index([("member_user_ids", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_journal_rooms_member")
     db.formulary_journal_items.create_index([("room_id", ASCENDING), ("created_at", ASCENDING)], name="ix_formulary_journal_items_room")
     db.formulary_journal_factchecks.create_index([("room_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_journal_factchecks_room")
+    db.formulary_grant_projects.create_index([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_grant_projects_user")
+    db.formulary_grant_partners.create_index([("project_id", ASCENDING), ("created_at", ASCENDING)], name="ix_formulary_grant_partners_project")
+    db.formulary_grant_workpackages.create_index([("project_id", ASCENDING), ("sequence", ASCENDING)], name="ix_formulary_grant_workpackages_project")
+    db.formulary_grant_milestones.create_index([("project_id", ASCENDING), ("due_on", ASCENDING)], name="ix_formulary_grant_milestones_project")
+    db.formulary_grant_ip_assets.create_index([("project_id", ASCENDING), ("created_at", ASCENDING)], name="ix_formulary_grant_ip_assets_project")
+    db.formulary_grant_disclosures.create_index([("project_id", ASCENDING), ("disclosed_at", DESCENDING)], name="ix_formulary_grant_disclosures_project")
     return db
