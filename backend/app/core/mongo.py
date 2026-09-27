@@ -88,4 +88,7 @@ def get_db() -> Database:
     db.formulary_grant_milestones.create_index([("project_id", ASCENDING), ("due_on", ASCENDING)], name="ix_formulary_grant_milestones_project")
     db.formulary_grant_ip_assets.create_index([("project_id", ASCENDING), ("created_at", ASCENDING)], name="ix_formulary_grant_ip_assets_project")
     db.formulary_grant_disclosures.create_index([("project_id", ASCENDING), ("disclosed_at", DESCENDING)], name="ix_formulary_grant_disclosures_project")
+    db.formulary_grant_funder_profiles.create_index([("project_id", ASCENDING)], unique=True, name="uq_formulary_grant_funder_profile_project")
+    db.formulary_grant_funder_rooms.create_index([("token_hash", ASCENDING)], unique=True, name="uq_formulary_grant_funder_room_token")
+    db.formulary_grant_funder_rooms.create_index([("project_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_grant_funder_rooms_project")
     return db
