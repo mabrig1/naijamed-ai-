@@ -84,6 +84,7 @@ See `docs/FORMULARY_MVP.md` for architecture, research-integrity rules and rollo
 - **Regulatory & Grant Copilot** — source-grounded FDA/ICH/NIH drafting with traceable source snapshots.
 - **Journal Club Live Room** — collaborative critical appraisal, linked evidence, action items and evidence-grounded fact checks.
 - **International Grant Project Studio** — consortium planning, work-package budgets, milestones, background-IP register, controlled-disclosure ledger and grant-readiness checks.
+- **Funder Due-Diligence Room** — reviewer-facing project dossier with cross-funder criteria, frozen expiring share links, access tracking and private-IP exclusion.
 
 Routes: `/formulary`, `/formulary/pkpd`, `/formulary/portfolio`, `/formulary/copilot`, `/formulary/journal`, `/formulary/grants`.
 
