@@ -58,6 +58,8 @@ FORMULARY_FREE_REVIEW_LIMIT=2
 FORMULARY_FREE_PAPER_LIMIT=10
 FORMULARY_FREE_PK_RUN_LIMIT=3
 FORMULARY_FREE_PORTFOLIO_ITEM_LIMIT=25
+FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT=1
+FORMULARY_FREE_COPILOT_DRAFT_LIMIT=3
 FORMULARY_PDF_MAX_BYTES=12582912
 FORMULARY_LLM_MODEL=
 ```
@@ -71,6 +73,8 @@ FORMULARY_LLM_MODEL=
 - evidence correction provenance
 - 3 saved PK/PD runs
 - 25 residency/research portfolio items
+- 1 regulatory/grant copilot workspace
+- 3 generated copilot drafts
 
 ### Formulary Scholar
 
@@ -81,6 +85,7 @@ FORMULARY_LLM_MODEL=
 - unlimited PK/PD simulator runs;
 - unlimited residency/research portfolio tracking;
 - opt-in public portfolio and supervisor/preceptor attestations;
+- unlimited regulatory/grant copilot workspaces and drafts;
 - future advanced modules as they launch.
 
 The listed price is currently ₦8,000/month but is environment-configurable.
@@ -148,11 +153,43 @@ References:
 - https://www.ashp.org/professional-development/residency-information/residency-program-resources/pharmacademic
 - https://www.ashp.org/professional-development/residency-information/residency-program-resources
 
+## Regulatory & Grant Copilot — implemented
+
+Route: `/formulary/copilot`
+
+The copilot is source-grounded by design. A workspace can combine:
+
+- curated official FDA, ICH and NIH source metadata;
+- selected Formulary Living Reviews and their structured paper evidence;
+- user-supplied NOFO, guidance or institutional excerpts;
+- researcher notes and jurisdiction constraints.
+
+Implemented draft types:
+
+- NIH Specific Aims;
+- NIH Research Strategy;
+- grant application planning;
+- regulatory strategy briefs;
+- CTD / eCTD dossier plans;
+- protocol outlines;
+- compliance-gap analyses.
+
+Every generated draft stores:
+
+- the exact source snapshot used;
+- inline `[SRC:source-id]` references;
+- generation method;
+- deterministic gap checks;
+- selected literature review IDs;
+- unresolved verification items.
+
+The engine rejects invented source IDs. If the configured AI service is unavailable, it returns a deterministic structured working template rather than fabricating unsupported prose.
+
+Current curated source registry includes ICH E6(R3), ICH M4 CTD, ICH eCTD v4.0, FDA clinical-pharmacology guidance and current NIH application/page-limit guidance. Draft guidance is explicitly labeled as draft.
+
+The researcher remains responsible for checking the current regulator, regional implementation documents, exact NOFO, institutional research office, ethics requirements and source text before submission.
+
 ## Roadmap
-
-### Phase 4 — Regulatory & Grant Copilot
-
-Evidence-grounded drafting against FDA, ICH and user-controlled literature libraries with exact-source citations.
 
 ### Phase 5 — Journal Club Live Room
 
