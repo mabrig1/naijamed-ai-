@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import { PageError, Spinner, StatusBadge } from "../components/Layout";
 import { useAuth } from "../contexts/AuthContext";
@@ -152,6 +152,7 @@ function downloadRecord(room: RoomDetail) {
 
 export default function FormularyJournalClub() {
   const { user } = useAuth();
+  const location = useLocation();
   const [home, setHome] = useState<Home | null>(null);
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [reviewEntries, setReviewEntries] = useState<ReviewDetail["entries"]>([]);
@@ -217,7 +218,11 @@ export default function FormularyJournalClub() {
 
   useEffect(() => {
     loadHome()
-      .then((data) => data.rooms[0] ? loadRoom(data.rooms[0].id) : undefined)
+      .then((data) => {
+        const stateRoomId = (location.state as { roomId?: string } | null)?.roomId;
+        const target = stateRoomId || data.rooms[0]?.id;
+        return target ? loadRoom(target) : undefined;
+      })
       .catch((err: unknown) => setError(detail(err)))
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
