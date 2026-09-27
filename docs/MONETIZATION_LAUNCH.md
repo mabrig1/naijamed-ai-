@@ -66,6 +66,8 @@ DOCTOR_WORKSPACE_MONTHLY_KOBO=1500000
 DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE=
 FORMULARY_STUDENT_MONTHLY_KOBO=800000
 FORMULARY_STUDENT_PAYSTACK_PLAN_CODE=
+FORMULARY_FREE_COPILOT_WORKSPACE_LIMIT=1
+FORMULARY_FREE_COPILOT_DRAFT_LIMIT=3
 CONSULT_PLATFORM_FEE_PERCENT=18
 FRONTEND_URL=https://nigerflora.mabrigkorie.org
 ```
@@ -113,6 +115,8 @@ Do not treat a green frontend Vercel build as proof that the Python endpoints ar
 - `GET /api/formulary` (authenticated)
 - `GET /api/formulary/pkpd/runs` (authenticated)
 - `GET /api/formulary/portfolio` (authenticated)
+- `GET /api/formulary/copilot` (authenticated)
+- `GET /api/formulary/copilot/sources` (authenticated)
 - `GET /api/formulary/portfolio/public/{slug}`
 - `POST /api/clinical/subscriptions/checkout`
 - `POST /api/formulary/pkpd/nca`
