@@ -443,7 +443,10 @@ export default function FormularyGrantStudio() {
                 <div className="mt-5 rounded-2xl border border-gold-200 bg-gold-50 p-4">
                   <div className="text-xs font-bold uppercase tracking-wide text-gold-700">Controlled-disclosure watermark</div>
                   <p className="mt-2 break-words text-xs leading-5 text-gray-700">{selected.watermark}</p>
-                  <button className="btn-outline mt-3 text-xs" onClick={copyWatermark}>Copy watermark</button>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button className="btn-outline text-xs" onClick={copyWatermark}>Copy watermark</button>
+                    <Link className="btn-primary text-xs" to={`/formulary/grants/${selected.project.id}/funder`}>Open Funder Dossier →</Link>
+                  </div>
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
