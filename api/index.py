@@ -2493,6 +2493,16 @@ def _grant_related_public(row: dict[str, Any]) -> dict[str, Any]:
     return output
 
 
+def _grant_funder_profile_public(row: dict[str, Any] | None) -> dict[str, Any]:
+    if not row:
+        return {"funder_lens": "cross_funder"}
+    return {
+        key: value
+        for key, value in row.items()
+        if key not in {"_id", "user_id", "created_at", "updated_at"}
+    }
+
+
 def _grant_project_bundle(project: dict[str, Any]) -> dict[str, Any]:
     project_id = project["_id"]
     partners = _grant_collection_rows("formulary_grant_partners", project_id)
@@ -2500,6 +2510,8 @@ def _grant_project_bundle(project: dict[str, Any]) -> dict[str, Any]:
     milestones = _grant_collection_rows("formulary_grant_milestones", project_id)
     ip_assets = _grant_collection_rows("formulary_grant_ip_assets", project_id)
     disclosures = _grant_collection_rows("formulary_grant_disclosures", project_id)
+    funder_profile_row = get_db().formulary_grant_funder_profiles.find_one({"project_id": project_id})
+    funder_profile = _grant_funder_profile_public(funder_profile_row)
     readiness = readiness_assessment(
         project,
         partners=partners,
@@ -2516,6 +2528,14 @@ def _grant_project_bundle(project: dict[str, Any]) -> dict[str, Any]:
         "ip_assets": [_grant_related_public(row) for row in ip_assets],
         "disclosures": [_grant_related_public(row) for row in disclosures],
         "readiness": readiness,
+        "funder_profile": funder_profile,
+        "funder_readiness": funder_profile_assessment(
+            project,
+            funder_profile,
+            partners=partners,
+            work_packages=work_packages,
+            milestones=milestones,
+        ),
         "watermark": disclosure_watermark(project),
     }
 
@@ -2710,6 +2730,202 @@ def formulary_grant_disclosure_watermark(
     project = _grant_project_owner(project_id, user)
     return {"watermark": disclosure_watermark(project, version)}
 
+
+
+@app.get("/api/formulary/grants/projects/{project_id}/funder-profile")
+def formulary_grant_funder_profile(project_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    project = _grant_project_owner(project_id, user)
+    bundle = _grant_project_bundle(project)
+    return {
+        "project_id": project_id,
+        "profile": bundle["funder_profile"],
+        "readiness": bundle["funder_readiness"],
+        "lens": funder_lens(str(bundle["funder_profile"].get("funder_lens") or "cross_funder")),
+    }
+
+
+@app.put("/api/formulary/grants/projects/{project_id}/funder-profile")
+def formulary_update_grant_funder_profile(
+    project_id: str,
+    body: FormularyGrantFunderProfileRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    project = _grant_project_owner(project_id, user)
+    payload = body.model_dump()
+    for key in (
+        "impact_metrics", "capacity_outputs", "data_management_commitments",
+        "sdg_alignment", "keywords",
+    ):
+        payload[key] = [str(item).strip() for item in payload.get(key, []) if str(item).strip()]
+    now = _now()
+    get_db().formulary_grant_funder_profiles.update_one(
+        {"project_id": project_id},
+        {
+            "$set": {
+                "project_id": project_id,
+                "user_id": str(user["_id"]),
+                **payload,
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+    get_db().formulary_grant_projects.update_one(
+        {"_id": project_id, "user_id": str(user["_id"])},
+        {"$set": {"updated_at": now}},
+    )
+    return _grant_project_bundle(project)
+
+
+@app.get("/api/formulary/grants/projects/{project_id}/funder-rooms")
+def formulary_grant_funder_rooms(project_id: str, user: dict[str, Any] = Depends(current_user)):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    rows = get_db().formulary_grant_funder_rooms.find(
+        {"project_id": project_id, "user_id": str(user["_id"])}
+    ).sort("created_at", -1).limit(100)
+    return {
+        "rooms": [
+            {
+                "id": row["_id"],
+                "recipient_label": row.get("recipient_label"),
+                "expires_at": row.get("expires_at").isoformat() if row.get("expires_at") else None,
+                "revoked": bool(row.get("revoked", False)),
+                "access_count": int(row.get("access_count") or 0),
+                "last_accessed_at": row.get("last_accessed_at").isoformat() if row.get("last_accessed_at") else None,
+                "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+                "readiness_score": (row.get("snapshot") or {}).get("readiness", {}).get("score"),
+            }
+            for row in rows
+        ]
+    }
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/funder-rooms", status_code=201)
+def formulary_create_grant_funder_room(
+    project_id: str,
+    body: FormularyGrantFunderRoomRequest,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    project = _grant_project_owner(project_id, user)
+    db = get_db()
+    profile = _grant_funder_profile_public(
+        db.formulary_grant_funder_profiles.find_one({"project_id": project_id})
+    )
+    partners = _grant_collection_rows("formulary_grant_partners", project_id)
+    work_packages = _grant_collection_rows("formulary_grant_workpackages", project_id)
+    milestones = _grant_collection_rows("formulary_grant_milestones", project_id)
+    snapshot = safe_funder_snapshot(
+        project,
+        profile,
+        partners=partners,
+        work_packages=work_packages,
+        milestones=milestones,
+        include_budget=body.include_budget,
+        include_partners=body.include_partners,
+        include_milestones=body.include_milestones,
+    )
+
+    days = min(body.expires_in_days, settings.FORMULARY_GRANT_FUNDER_ROOM_MAX_DAYS)
+    raw_token = secrets.token_urlsafe(32)
+    now = _now()
+    room_id = f"FGROOM-{uuid.uuid4().hex[:12].upper()}"
+    expires_at = now + timedelta(days=days)
+    row = {
+        "_id": room_id,
+        "project_id": project_id,
+        "user_id": str(user["_id"]),
+        "recipient_label": body.recipient_label,
+        "note": body.note,
+        "token_hash": hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+        "snapshot": snapshot,
+        "expires_at": expires_at,
+        "revoked": False,
+        "access_count": 0,
+        "created_at": now,
+        "updated_at": now,
+    }
+    db.formulary_grant_funder_rooms.insert_one(row)
+
+    db.formulary_grant_disclosures.insert_one(
+        {
+            "_id": f"FGD-{uuid.uuid4().hex[:12].upper()}",
+            "project_id": project_id,
+            "user_id": str(user["_id"]),
+            "recipient_name": body.recipient_label or "Controlled funder-room recipient",
+            "recipient_organization": None,
+            "disclosed_at": now,
+            "material": "Funder Due-Diligence Room frozen snapshot",
+            "version": room_id,
+            "purpose": body.note or "International funder / consortium due diligence",
+            "confidentiality_basis": "Expiring tokenized read-only access. This access control does not itself create an NDA or other legal confidentiality obligation.",
+            "notes": "Background-IP records, disclosure history, private contact emails and unpublished source files are excluded from the snapshot.",
+            "watermark": disclosure_watermark(project, room_id),
+            "created_at": now,
+        }
+    )
+    db.formulary_grant_projects.update_one({"_id": project_id}, {"$set": {"updated_at": now}})
+
+    return {
+        "id": room_id,
+        "share_path": f"/funder-room/{raw_token}",
+        "expires_at": expires_at.isoformat(),
+        "readiness": snapshot["readiness"],
+        "notice": "This is a frozen, read-only, expiring snapshot. The raw token is returned only now; create a new room if the link is lost or should be rotated.",
+    }
+
+
+@app.post("/api/formulary/grants/projects/{project_id}/funder-rooms/{room_id}/revoke")
+def formulary_revoke_grant_funder_room(
+    project_id: str,
+    room_id: str,
+    user: dict[str, Any] = Depends(current_user),
+):
+    _formulary_require_user(user)
+    _grant_project_owner(project_id, user)
+    result = get_db().formulary_grant_funder_rooms.update_one(
+        {"_id": room_id, "project_id": project_id, "user_id": str(user["_id"])},
+        {"$set": {"revoked": True, "updated_at": _now()}},
+    )
+    if not result.matched_count:
+        raise HTTPException(status_code=404, detail="Funder room not found")
+    return {"id": room_id, "revoked": True}
+
+
+@app.get("/api/formulary/funder-room/{token}")
+def formulary_public_funder_room(token: str):
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    db = get_db()
+    row = db.formulary_grant_funder_rooms.find_one({"token_hash": token_hash})
+    if not row:
+        raise HTTPException(status_code=404, detail="Funder room not found")
+    if row.get("revoked"):
+        raise HTTPException(status_code=410, detail="This funder room has been revoked")
+    expires_at = row.get("expires_at")
+    if not expires_at or expires_at < _now():
+        raise HTTPException(status_code=410, detail="This funder room has expired")
+    db.formulary_grant_funder_rooms.update_one(
+        {"_id": row["_id"]},
+        {
+            "$inc": {"access_count": 1},
+            "$set": {"last_accessed_at": _now(), "updated_at": _now()},
+        },
+    )
+    return {
+        "room": {
+            "id": row["_id"],
+            "recipient_label": row.get("recipient_label"),
+            "note": row.get("note"),
+            "expires_at": expires_at.isoformat(),
+            "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+        },
+        "snapshot": row.get("snapshot") or {},
+        "access_notice": "This is a frozen project snapshot shared through an expiring read-only link. It is not a funding decision, endorsement, NDA or legal IP determination.",
+    }
 
 
 # -------------------------- monetization ------------------------------------
