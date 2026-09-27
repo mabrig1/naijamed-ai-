@@ -2368,10 +2368,12 @@ def _clinical_plan_catalog() -> dict[str, dict[str, Any]]:
             "paystack_plan_code": settings.FORMULARY_STUDENT_PAYSTACK_PLAN_CODE or None,
             "allowed_roles": ["researcher", "doctor", "clinic", "admin"],
             "features": [
-                "Unlimited living literature reviews",
-                "DOI and PDF pharmaceutical data extraction",
-                "Field-level correction provenance and evidence tables",
-                "OpenAlex citation-watch refresh for included papers",
+                "Unlimited living literature reviews and evidence entries",
+                "DOI/PDF pharmaceutical extraction and citation watch",
+                "PK/PD simulator with persistent research runs",
+                "Residency & research portfolio with attestations",
+                "Source-grounded regulatory & grant copilot",
+                "Journal Club Live Rooms with evidence-grounded fact checks",
             ],
         },
     }
