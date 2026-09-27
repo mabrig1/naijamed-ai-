@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import { Spinner } from "./components/Layout";
@@ -74,7 +74,10 @@ function Loading() {
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const location = useLocation();
+  return isAuthenticated
+    ? <>{children}</>
+    : <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
 }
 
 function PublicOnly({ children }: { children: React.ReactNode }) {
