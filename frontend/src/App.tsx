@@ -22,6 +22,8 @@ const FormularyCopilot          = lazy(() => import("./pages/FormularyCopilot"))
 const FormularyJournalClub      = lazy(() => import("./pages/FormularyJournalClub"));
 const FormularyJournalJoin      = lazy(() => import("./pages/FormularyJournalJoin"));
 const FormularyGrantStudio      = lazy(() => import("./pages/FormularyGrantStudio"));
+const FormularyFunderStudio     = lazy(() => import("./pages/FormularyFunderStudio"));
+const FormularyFunderRoomPublic = lazy(() => import("./pages/FormularyFunderRoomPublic"));
 const MonetizationAdmin         = lazy(() => import("./pages/admin/MonetizationAdmin"));
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
 const DiscoveryWorkbench        = lazy(() => import("./pages/discovery/DiscoveryWorkbench"));
@@ -98,6 +100,7 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/portfolio/:slug" element={<FormularyPublicPortfolio />} />
         <Route path="/formulary/attest/:token" element={<FormularyAttestation />} />
+        <Route path="/funder-room/:token" element={<FormularyFunderRoomPublic />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 
@@ -112,6 +115,7 @@ export default function App() {
           <Route path="/formulary/journal" element={<FormularyJournalClub />} />
           <Route path="/formulary/journal/join/:token" element={<FormularyJournalJoin />} />
           <Route path="/formulary/grants" element={<FormularyGrantStudio />} />
+          <Route path="/formulary/grants/:projectId/funder" element={<FormularyFunderStudio />} />
           <Route path="/research-commerce/admin" element={<ResearchCommerceAdmin />} />
           <Route path="/monetization/admin" element={<MonetizationAdmin />} />
           <Route path="/discovery" element={<DiscoveryWorkbench />} />
