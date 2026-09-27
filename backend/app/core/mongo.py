@@ -78,4 +78,8 @@ def get_db() -> Database:
     db.formulary_attestations.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_attestations_user")
     db.formulary_copilot_workspaces.create_index([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_copilot_workspaces_user")
     db.formulary_copilot_drafts.create_index([("user_id", ASCENDING), ("workspace_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_copilot_drafts_user")
+    db.formulary_journal_rooms.create_index([("owner_user_id", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_journal_rooms_owner")
+    db.formulary_journal_rooms.create_index([("member_user_ids", ASCENDING), ("updated_at", DESCENDING)], name="ix_formulary_journal_rooms_member")
+    db.formulary_journal_items.create_index([("room_id", ASCENDING), ("created_at", ASCENDING)], name="ix_formulary_journal_items_room")
+    db.formulary_journal_factchecks.create_index([("room_id", ASCENDING), ("created_at", DESCENDING)], name="ix_formulary_journal_factchecks_room")
     return db
