@@ -12,6 +12,7 @@ const Register                  = lazy(() => import("./pages/Auth/Register"));
 const Dashboard                 = lazy(() => import("./pages/Dashboard"));
 const ResearchStudio            = lazy(() => import("./pages/research/ResearchStudio"));
 const BioinformaticsServices    = lazy(() => import("./pages/research/BioinformaticsServices"));
+const ResearchProjects          = lazy(() => import("./pages/ResearchProjects"));
 const Pricing                   = lazy(() => import("./pages/Pricing"));
 const Formulary                 = lazy(() => import("./pages/Formulary"));
 const FormularyPKPD             = lazy(() => import("./pages/FormularyPKPD"));
@@ -97,6 +98,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/bioinformatics-services" element={<BioinformaticsServices />} />
+        <Route path="/research-projects" element={<ResearchProjects />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/portfolio/:slug" element={<FormularyPublicPortfolio />} />
         <Route path="/formulary/attest/:token" element={<FormularyAttestation />} />
