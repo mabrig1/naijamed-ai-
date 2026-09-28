@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 const FEATURES = [
+  { icon: "📚", title: "Formulary", desc: "A living literature review workspace for PharmD, M.Sc., Ph.D. students and residents—DOI/PDF extraction, evidence tables and citation watch." },
   { icon: "🩺", title: "Clinical Navigation", desc: "Agentic triage, red-flag escalation, clinician handoff and structured SOAP-ready case summaries." },
   { icon: "🧬", title: "Bioinformatics Consulting", desc: "Order network pharmacology, ADMET, molecular docking, Cytoscape networks and publication-ready figures with tracked delivery." },
   { icon: "🌿", title: "Ethnobotanical Intelligence", desc: "Organize Nigerian medicinal-plant evidence, compounds, regional knowledge and discovery datasets." },
@@ -10,6 +11,9 @@ const FEATURES = [
 ];
 
 const REVENUE = [
+  ["Formulary Scholar", "₦8,000 / month"],
+  ["Family Health Pass", "₦5,000 / month"],
+  ["Doctor Workspace", "₦15,000 / month"],
   ["Scope Consultation", "₦25,000 / $39"],
   ["ADMET Screening", "From ₦75,000 / $110"],
   ["Network Pharmacology", "From ₦120,000 / $180"],
@@ -29,7 +33,10 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Bioinformatics Services</Link>
+          <Link to="/research-projects" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Ongoing Research</Link>
+          <Link to="/formulary" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Formulary</Link>
+          <Link to="/pricing" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 md:block">Plans & Pricing</Link>
+          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 md:block">Bioinformatics Services</Link>
           <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Sign In</Link>
           <Link to="/register" className="btn-secondary px-4 py-2 text-sm">Get Started</Link>
         </div>
@@ -48,9 +55,12 @@ export default function Landing() {
               NigerFlora BioSciences combines responsible AI health workflows with paid bioinformatics consulting for M.Sc., Ph.D., research groups and academic departments.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link to="/bioinformatics-services" className="btn-secondary px-8 py-3 text-center text-base">View Prices & Order Analysis →</Link>
+              <Link to="/formulary" className="btn-secondary px-8 py-3 text-center text-base">Open Formulary →</Link>
+              <Link to="/pricing" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Plans & Pricing</Link>
+              <Link to="/bioinformatics-services" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Order Research Analysis</Link>
               <Link to="/register" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Create Free Account</Link>
               <Link to="/research-studio" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Research Studio</Link>
+              <Link to="/research-projects" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">View Ongoing Research</Link>
             </div>
           </div>
           <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-sm">
@@ -84,6 +94,31 @@ export default function Landing() {
         </div>
       </section>
 
+
+      <section className="bg-white px-6 py-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div className="max-w-3xl">
+              <div className="text-xs font-bold uppercase tracking-[0.2em] text-forest-500">Ongoing research</div>
+              <h2 className="mt-2 text-3xl font-bold text-forest-900 md:text-4xl">Two active research programmes, one translational pipeline.</h2>
+              <p className="mt-3 text-sm leading-7 text-gray-500">RP-001 builds local ethnobotanical and laboratory evidence in Nsukka. RP-002/NEXUS-AMR Africa develops the wider One Health AMR consortium and international grant programme.</p>
+            </div>
+            <Link to="/research-projects" className="btn-primary px-6 py-3">Explore ongoing projects →</Link>
+          </div>
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <div className="rounded-2xl border border-forest-100 bg-forest-50 p-5">
+              <div className="text-xs font-bold uppercase tracking-wide text-forest-600">RP-001 · Ongoing</div>
+              <div className="mt-2 text-xl font-bold text-forest-900">Nsukka UTI Ethnobotany & Antimicrobial Validation</div>
+              <p className="mt-2 text-sm leading-6 text-gray-600">Protocol development, ethics preparation, voucher-specimen planning and field-to-laboratory validation.</p>
+            </div>
+            <div className="rounded-2xl border border-gold-100 bg-gold-50 p-5">
+              <div className="text-xs font-bold uppercase tracking-wide text-gold-700">RP-002 · Ongoing</div>
+              <div className="mt-2 text-xl font-bold text-forest-900">NEXUS-AMR Africa</div>
+              <p className="mt-2 text-sm leading-6 text-gray-600">Consortium development, institutional engagement and international grant preparation for a multi-year One Health AMR programme.</p>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="bg-forest-800 px-6 py-16 text-white">
         <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
           {[

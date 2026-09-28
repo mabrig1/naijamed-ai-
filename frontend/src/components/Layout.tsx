@@ -11,6 +11,8 @@ const PRIMARY_NAV: NavItem[] = [
   { to: "/bioinformatics-services", label: "💼 Bioinformatics" },
   { to: "/discovery", label: "🧪 Discovery" },
   { to: "/research-studio", label: "🧬 Research Studio" },
+  { to: "/research-projects", label: "🔎 Ongoing Projects" },
+  { to: "/formulary", label: "📚 Formulary" },
   { to: "/research", label: "📊 Research" },
   { to: "/herbs", label: "🌿 Herb Data" },
   { to: "/formulations", label: "🔬 Formulations" },
@@ -195,10 +197,19 @@ export default function Layout() {
                         <div className="text-sm font-semibold">{user.full_name}</div>
                         <div className="truncate text-xs text-gray-500">{user.email}</div>
                       </div>
+                      <Link to="/pricing" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💳 Plans & Billing</Link>
                       <Link to="/bioinformatics-services" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💼 Order Bioinformatics Analysis</Link>
                       <Link to="/discovery" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧪 Discovery Workbench</Link>
+                      <Link to="/formulary" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📚 Formulary Workspace</Link>
+                      <Link to="/formulary/portfolio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🎓 Research & Residency Portfolio</Link>
+                      <Link to="/formulary/copilot" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧾 Regulatory & Grant Copilot</Link>
+                      <Link to="/formulary/journal" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🗣️ Journal Club Live Room</Link>
+                      <Link to="/formulary/grants" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🌍 International Grant Project Studio</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
-                      {String(user.role) === "admin" && <Link to="/research-commerce/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">💰 Research Commerce Admin</Link>}
+                      {String(user.role) === "admin" && <>
+                        <Link to="/monetization/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📈 Monetization Dashboard</Link>
+                        <Link to="/research-commerce/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">💰 Research Commerce Admin</Link>
+                      </>}
                       <Link to="/dashboard" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📊 Dashboard</Link>
                       <button type="button" onClick={handleLogout} className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">🚪 Sign out</button>
                     </div>
@@ -236,7 +247,8 @@ export default function Layout() {
           <div>
             <h4 className="font-semibold text-white">Research Revenue</h4>
             <div className="mt-3 space-y-2 text-sm">
-              <Link className="block font-semibold text-gold-300 hover:text-white" to="/bioinformatics-services">Order Bioinformatics Services</Link>
+              <Link className="block font-semibold text-gold-300 hover:text-white" to="/pricing">Plans & Pricing</Link>
+              <Link className="block hover:text-gold-300" to="/bioinformatics-services">Order Bioinformatics Services</Link>
               <Link className="block hover:text-gold-300" to="/research-studio">Research Studio</Link>
               <Link className="block hover:text-gold-300" to="/research-studio">Grant & Proposal Support</Link>
             </div>

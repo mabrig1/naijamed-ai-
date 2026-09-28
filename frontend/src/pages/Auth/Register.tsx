@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Spinner } from "../../components/Layout";
 
@@ -14,6 +14,8 @@ const ROLES = [
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location.state as { from?: string } | null)?.from;
   const [form, setForm] = useState({ email: "", full_name: "", password: "", role: "researcher" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(form.email, form.full_name, form.password, form.role);
-      navigate(form.role === "researcher" ? "/research-studio" : "/dashboard");
+      navigate(returnTo || (form.role === "researcher" ? "/research-studio" : "/dashboard"), { replace: true });
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string | { msg: string }[] } } })?.response?.data?.detail;
       if (Array.isArray(detail)) setError(detail[0]?.msg ?? "Registration failed.");
@@ -115,7 +117,7 @@ export default function Register() {
           </form>
 
           <div className="mt-6 border-t border-gray-100 pt-5 text-center text-sm text-gray-500">
-            Already have an account? <Link to="/login" className="font-semibold text-forest-600 hover:underline">Sign in</Link>
+            Already have an account? <Link to="/login" state={{ from: returnTo }} className="font-semibold text-forest-600 hover:underline">Sign in</Link>
           </div>
         </div>
       </div>

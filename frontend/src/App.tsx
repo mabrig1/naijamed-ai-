@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import { Spinner } from "./components/Layout";
@@ -12,6 +12,20 @@ const Register                  = lazy(() => import("./pages/Auth/Register"));
 const Dashboard                 = lazy(() => import("./pages/Dashboard"));
 const ResearchStudio            = lazy(() => import("./pages/research/ResearchStudio"));
 const BioinformaticsServices    = lazy(() => import("./pages/research/BioinformaticsServices"));
+const ResearchProjects          = lazy(() => import("./pages/ResearchProjects"));
+const Pricing                   = lazy(() => import("./pages/Pricing"));
+const Formulary                 = lazy(() => import("./pages/Formulary"));
+const FormularyPKPD             = lazy(() => import("./pages/FormularyPKPD"));
+const FormularyPortfolio        = lazy(() => import("./pages/FormularyPortfolio"));
+const FormularyPublicPortfolio  = lazy(() => import("./pages/FormularyPublicPortfolio"));
+const FormularyAttestation      = lazy(() => import("./pages/FormularyAttestation"));
+const FormularyCopilot          = lazy(() => import("./pages/FormularyCopilot"));
+const FormularyJournalClub      = lazy(() => import("./pages/FormularyJournalClub"));
+const FormularyJournalJoin      = lazy(() => import("./pages/FormularyJournalJoin"));
+const FormularyGrantStudio      = lazy(() => import("./pages/FormularyGrantStudio"));
+const FormularyFunderStudio     = lazy(() => import("./pages/FormularyFunderStudio"));
+const FormularyFunderRoomPublic = lazy(() => import("./pages/FormularyFunderRoomPublic"));
+const MonetizationAdmin         = lazy(() => import("./pages/admin/MonetizationAdmin"));
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
 const DiscoveryWorkbench        = lazy(() => import("./pages/discovery/DiscoveryWorkbench"));
 
@@ -64,7 +78,10 @@ function Loading() {
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const location = useLocation();
+  return isAuthenticated
+    ? <>{children}</>
+    : <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
 }
 
 function PublicOnly({ children }: { children: React.ReactNode }) {
@@ -81,6 +98,11 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/bioinformatics-services" element={<BioinformaticsServices />} />
+        <Route path="/research-projects" element={<ResearchProjects />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/portfolio/:slug" element={<FormularyPublicPortfolio />} />
+        <Route path="/formulary/attest/:token" element={<FormularyAttestation />} />
+        <Route path="/funder-room/:token" element={<FormularyFunderRoomPublic />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 
@@ -88,7 +110,16 @@ export default function App() {
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/research-studio" element={<ResearchStudio />} />
+          <Route path="/formulary" element={<Formulary />} />
+          <Route path="/formulary/pkpd" element={<FormularyPKPD />} />
+          <Route path="/formulary/portfolio" element={<FormularyPortfolio />} />
+          <Route path="/formulary/copilot" element={<FormularyCopilot />} />
+          <Route path="/formulary/journal" element={<FormularyJournalClub />} />
+          <Route path="/formulary/journal/join/:token" element={<FormularyJournalJoin />} />
+          <Route path="/formulary/grants" element={<FormularyGrantStudio />} />
+          <Route path="/formulary/grants/:projectId/funder" element={<FormularyFunderStudio />} />
           <Route path="/research-commerce/admin" element={<ResearchCommerceAdmin />} />
+          <Route path="/monetization/admin" element={<MonetizationAdmin />} />
           <Route path="/discovery" element={<DiscoveryWorkbench />} />
 
           {/* Herbs */}

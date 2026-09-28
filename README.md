@@ -47,6 +47,48 @@ Patient / Researcher / Doctor / Clinic
 | Low-bandwidth | Africa's Talking SMS / USSD |
 | Maps | OpenStreetMap/Nominatim + internal verified-provider registry |
 
+## Monetization
+
+Public pricing: `/pricing`
+
+Recurring clinical revenue is built around a **Family Health Pass (₦5,000/month)** and **Doctor Workspace (₦15,000/month)** using Paystack subscriptions. Verified doctor consultations use provider-set fees with a configurable platform commission, while the existing bioinformatics storefront remains the high-ticket research-services lane.
+
+Production subscription variables:
+
+```dotenv
+FAMILY_PASS_MONTHLY_KOBO=500000
+FAMILY_PASS_PAYSTACK_PLAN_CODE=PLN_...
+DOCTOR_WORKSPACE_MONTHLY_KOBO=1500000
+DOCTOR_WORKSPACE_PAYSTACK_PLAN_CODE=PLN_...
+CONSULT_PLATFORM_FEE_PERCENT=18
+```
+
+See `docs/MONETIZATION_LAUNCH.md` for the complete activation and test checklist.
+
+## Formulary
+
+Formulary is the postgraduate pharmaceutical research workspace inside NigerFlora. Its first production MVP is a **Living Literature Review** that converts DOI metadata and authorized PDF uploads into structured pharmaceutical evidence tables, preserves researcher corrections with provenance, and refreshes incoming citations through OpenAlex.
+
+Route: `/formulary`
+
+Default commercial tier: **Formulary Scholar — ₦8,000/month**, configurable through environment variables.
+
+See `docs/FORMULARY_MVP.md` for architecture, research-integrity rules and rollout metrics.
+
+
+### Implemented Formulary modules
+
+- **Living Literature Review** — DOI/PDF evidence extraction, corrections and citation watch.
+- **PK/PD Simulator** — NCA and one-compartment educational/research simulations.
+- **Rotation & Research Portfolio** — PharmD/residency/postgraduate milestones with optional attestations.
+- **Regulatory & Grant Copilot** — source-grounded FDA/ICH/NIH drafting with traceable source snapshots.
+- **Journal Club Live Room** — collaborative critical appraisal, linked evidence, action items and evidence-grounded fact checks.
+- **International Grant Project Studio** — consortium planning, work-package budgets, milestones, background-IP register, controlled-disclosure ledger and grant-readiness checks.
+- **Funder Due-Diligence Room** — reviewer-facing project dossier with cross-funder criteria, frozen expiring share links, access tracking and private-IP exclusion.
+
+Routes: `/formulary`, `/formulary/pkpd`, `/formulary/portfolio`, `/formulary/copilot`, `/formulary/journal`, `/formulary/grants`.
+
+
 ## Research & Discovery Studio
 
 NigerFlora includes a monetizable research-services layer for:
