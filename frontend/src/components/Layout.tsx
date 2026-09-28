@@ -11,6 +11,7 @@ const PRIMARY_NAV: NavItem[] = [
   { to: "/bioinformatics-services", label: "💼 Bioinformatics" },
   { to: "/discovery", label: "🧪 Discovery" },
   { to: "/research-studio", label: "🧬 Research Studio" },
+  { to: "/research-projects", label: "🔎 Ongoing Projects" },
   { to: "/formulary", label: "📚 Formulary" },
   { to: "/research", label: "📊 Research" },
   { to: "/herbs", label: "🌿 Herb Data" },
