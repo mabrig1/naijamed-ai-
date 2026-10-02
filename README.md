@@ -1,129 +1,143 @@
-# NigerFlora BioSciences
+# MediNaija
 
-NigerFlora BioSciences is an agentic healthcare, ethnobotanical research and computational discovery platform for Nigeria. Its production architecture is intentionally simple: **React/Vite + FastAPI on Vercel, MongoDB Atlas for application data, and Qdrant for medically reviewed retrieval-augmented clinical knowledge**.
+**Your chronic care companion — drugs, delivery, and check-ins in one plan.**
 
-## Production URLs
+MediNaija is the chronic-care MVP now wired into this repository. The root application is Next.js 14 + TypeScript + Tailwind/shadcn-style components, backed by Supabase. The previous NigerFlora React/Vite + FastAPI source is intentionally preserved under the existing `frontend/`, `backend/` and root `api/` folders for reference while the MediNaija migration is validated.
 
-- Canonical public domain: `https://nigerflora.mabrigkorie.org`
-- Vercel deployment alias: `https://nigerflora-biosciences.vercel.app`
+## Current implementation
 
-The custom domain is the preferred URL for users, payment callbacks and public links. The Vercel alias remains an allowed origin and operational fallback.
+### Phase 1
+- Phone + SMS OTP authentication through Supabase Auth
+- Explicit health-data consent screen
+- Three-step onboarding for conditions, current medicine source and monthly budget
+- Profile with name, DOB, state, LGA, email and next-of-kin
+- Dashboard showing next refill, adherence streak and monthly successful-payment spend
+- IndexedDB cache with a 30-day offline retention window
+- Data export and deletion endpoints
+- English / Yoruba / Hausa / Igbo / Pidgin preference control (translation copy still needs completion)
 
-## Production architecture
+### Phase 2 core
+- Naira care plans seeded at ₦2,000 / ₦5,000 / ₦8,000
+- Server-side Paystack initialization with amount derived from the plan record
+- Lazy-loaded Paystack InlineJS using `resumeTransaction(accessCode)`
+- USSD-only Paystack channel option
+- Signed Paystack webhook with amount verification before subscription activation
+- Adherence yes/no check-in
+- Partner-pharmacy lookup within 5km
+- 50 clearly marked demo pharmacies across Lagos, Abuja, Kano and Port Harcourt
+- Order endpoint with pickup/delivery choice
+- Daily refill cron that sends Termii SMS three days before refill where SMS consent exists
+- USSD aggregator flow documented; live short code is intentionally not invented
 
-```text
-Patient / Researcher / Doctor / Clinic
-               |
-               v
-       React + Vite frontend
-               |
-               v
-   Vercel Python FastAPI (/api/*)
-               |
-       +-------+--------------------+
-       |                            |
-       v                            v
- MongoDB Atlas                Agent workflows
- users/cases/orders           clinical + research studio
-                                    |
-                         +----------+----------+
-                         v                     v
-                    Qdrant RAG          External services
-                                    Paystack / maps / voice
-```
+## Important production boundaries
 
-### Core stack
+### Medication safety
+Plan drug names represent fulfilment bundles, not prescribing. Medicines that require prescriptions must only be fulfilled against a valid prescription and pharmacist/doctor review. MediNaija does not diagnose or independently change treatment.
 
-| Layer | Production technology |
-|---|---|
-| Hosting / CI | Vercel Git deployments + preview deployments |
-| Frontend | React, Vite, TypeScript, Tailwind CSS |
-| API | FastAPI on the Vercel Python runtime |
-| Primary database | MongoDB Atlas |
-| Clinical orchestration | LangGraph |
-| Clinical RAG | Qdrant + reviewed Nigerian/WHO protocol chunks |
-| Payments | Paystack |
-| Voice | OpenAI transcription API |
-| Low-bandwidth | Africa's Talking SMS / USSD |
-| Maps | OpenStreetMap/Nominatim + internal verified-provider registry |
+### Pharmacy trust
+The seeded pharmacies use `DEMO-PCN-xxxx` identifiers. They are test data only. Replace them with verified PCN partner records before public launch.
 
-## Research & Discovery Studio
+### Nigerian data residency
+For production PII, point `NEXT_PUBLIC_SUPABASE_URL` at a Supabase deployment hosted in Nigeria (for example self-hosted on Nigerian infrastructure such as MainOne or Rack Centre). Do not use a foreign-region database for production PII if the in-country storage rule remains mandatory.
 
-NigerFlora includes a monetizable research-services layer for:
+### USSD
+Do not hard-code `*737#` as MediNaija's short code. A production USSD code must be issued by the selected aggregator. The repository contains the intended menu contract in `docs/MEDINAIJA_USSD.md`.
 
-- network pharmacology consulting;
-- ADMET and drug-likeness screening;
-- molecular docking support;
-- in-silico thesis packages;
-- publication-ready scientific figures;
-- herbal research grant/proposal architecture;
-- practical in-silico research training;
-- experimental Polyherbal Synergy Index (PSI-β) projects.
+## Setup
 
-Computational outputs are hypothesis-generating research evidence. They are not automatic proof of therapeutic efficacy, safety, patentability or regulatory approval.
+1. Create or self-host Supabase in the required Nigerian region/infrastructure.
+2. Run:
+   ```sql
+   supabase/migrations/202610030001_medinaija_mvp.sql
+   ```
+3. Enable phone authentication in Supabase and configure its supported SMS provider.
+4. Copy `.env.example` to `.env.local` and add test keys.
+5. Install and run:
+   ```bash
+   npm install
+   npm run dev
+   ```
+6. Run high-risk tests:
+   ```bash
+   npm test
+   ```
 
-## Vercel deployment
+## Environment variables
 
-Vercel detects `api/index.py` as the FastAPI entrypoint. Requests under `/api/*` are handled by Python functions, while the React build is served from `frontend/dist`. The frontend API client automatically uses the current browser origin in production, so both production domains can call their own `/api/*` routes without a hard-coded localhost address.
-
-### Required production environment variables
+Required for the first vertical slice:
 
 ```dotenv
-APP_NAME="NigerFlora BioSciences"
-MONGODB_URI=mongodb+srv://...
-MONGODB_DB=mabrig_healthos
-SECRET_KEY=<long-random-secret>
-PHI_ENCRYPTION_KEY=<32-byte-base64url-or-hex-key>
-GEMINI_API_KEY=<key>
-PAYSTACK_SECRET_KEY=<key>
-FRONTEND_URL=https://nigerflora.mabrigkorie.org
-EXTRA_CORS_ORIGINS=https://nigerflora-biosciences.vercel.app
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+PAYSTACK_SECRET_KEY=
+PAYSTACK_PUBLIC_KEY=
+TERMII_BASE_URL=
+TERMII_API_KEY=
+TERMII_SENDER_ID=MediNaija
+NEXT_PUBLIC_APP_URL=https://your-domain.example
+CRON_SECRET=
 ```
 
-Recommended integrations:
+Recommended before public launch:
 
 ```dotenv
-QDRANT_URL=
-QDRANT_API_KEY=
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+NEXT_PUBLIC_SENTRY_DSN=
+SENTRY_DSN=
 OPENAI_API_KEY=
-AFRICASTALKING_USERNAME=
-AFRICASTALKING_API_KEY=
-ADMIN_EMAILS=admin@example.com
+OPENAI_TRIAGE_MODEL=gpt-4o-mini
+FLUTTERWAVE_SECRET_KEY=
+FLUTTERWAVE_PUBLIC_KEY=
 ```
 
-## MongoDB Atlas collections
+## Supabase RLS
 
-The application creates indexes automatically on first successful connection. Primary collections include:
+The migration enables Row Level Security across patient-owned tables. Patient records use the authenticated Supabase user UUID and policies restrict reads/writes to `auth.uid()`. Plans and pharmacy directories are public-read; backend service operations use the Supabase service role and must remain server-only.
 
-- `users`
-- `clinical_cases`
-- `provider_profiles`
-- `clinical_consultations`
-- `clinical_audit_logs`
-- `research_service_orders`
-- `polyherbal_synergy_projects`
+## Payments
 
-Clinical case payloads are encrypted before storage using AES-256-GCM. Keep `PHI_ENCRYPTION_KEY` only in Vercel environment variables; never commit it.
+The browser sends only a plan slug and chosen checkout channel. The backend fetches the authoritative plan amount from Supabase before initializing Paystack. The webhook:
 
-## Local development
+1. validates `x-paystack-signature`;
+2. checks the payment reference;
+3. verifies the paid amount matches the stored amount;
+4. marks the payment successful;
+5. activates/upserts the matching subscription.
+
+Never expose `PAYSTACK_SECRET_KEY` in the browser.
+
+## Refill reminders
+
+Vercel cron calls `/api/cron/refills` each day at 08:00 UTC (09:00 Nigeria time). Only users who explicitly opted into SMS reminders receive a Termii message.
+
+## Mobile
+
+`mobile/` is an Expo shell using the same Supabase phone OTP model and local AsyncStorage. The next mobile increment should reuse the onboarding/domain types in `shared/medinaija-core.ts` and cache the same 30-day dataset.
+
+Run independently:
 
 ```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-npm --prefix frontend install
-vercel dev
+cd mobile
+npm install
+EXPO_PUBLIC_SUPABASE_URL=... EXPO_PUBLIC_SUPABASE_ANON_KEY=... npm start
 ```
 
-Then open the local URL shown by Vercel. Production should use `https://nigerflora.mabrigkorie.org`.
+## Vercel
 
-## Clinical safety boundary
+The root `vercel.json` switches the repository to Next.js and keeps the old Python `api/*.py` functions available during migration. Validate the preview branch before merging to production because the existing project previously served the NigerFlora Vite build.
 
-NigerFlora BioSciences is clinical decision support, not an autonomous doctor. Deterministic red-flag rules run before the LLM. The system does not autonomously prescribe medication or provide medication doses. Differential considerations are generated only when reviewed evidence is retrieved, and treatment decisions remain with licensed clinicians.
+## Not yet production-complete
 
-Before public clinical launch, complete independent medical advisory review, provider-licence verification procedures, privacy/data-protection assessment, incident response, penetration testing, and validation of the clinical knowledge corpus.
+These listed roadmap items are intentionally not represented as complete yet:
+- live Nigerian USSD aggregator provisioning;
+- Flutterwave production fallback;
+- GIG/Kwik live dispatch APIs;
+- full five-language translated copy;
+- custom plan clinical workflow;
+- Phase 3 AI triage / speech-to-text / agent app / NHIA integration;
+- Phase 4 labs / family accounts / WhatsApp / referrals / admin cohort analytics;
+- replacement of demo pharmacies with verified PCN partners;
+- production penetration testing, clinical governance and incident-response sign-off.
 
-## Legacy source
-
-Older herbal-marketplace SQLAlchemy modules remain for source/history compatibility, but they are **not imported by the Vercel production entrypoint and do not require a PostgreSQL service for deployment**.
+See `docs/DEMO_SCRIPT.md` for the 3-minute demo flow.
