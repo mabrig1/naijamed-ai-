@@ -61,6 +61,9 @@ def get_db() -> Database:
     db.discovery_assets.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_discovery_assets_user")
     db.discovery_screening_jobs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_screening_jobs_user")
     db.discovery_screening_jobs.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="ix_screening_jobs_status")
+    db.discovery_screening_jobs.create_index([("status", ASCENDING), ("lease_expires_at", ASCENDING)], name="ix_screening_jobs_worker_lease")
+    db.discovery_evidence_ledger.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_discovery_evidence_user")
+    db.discovery_evidence_ledger.create_index([("job_id", ASCENDING)], unique=True, name="uq_discovery_evidence_job")
     db.discovery_networks.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="ix_discovery_networks_user")
 
     # Formulary — postgraduate pharmaceutical evidence workspace
