@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     OPENALEX_API_KEY: str = ""
     CROSSREF_MAILTO: str = ""
 
+    # PharmaOS external compute worker. Keep this secret in Vercel/Kaggle env only.
+    PHARMAOS_WORKER_TOKEN: str = ""
+
     FRONTEND_URL: str = "https://nigerflora.mabrigkorie.org"
     EXTRA_CORS_ORIGINS: str = "https://nigerflora-biosciences.vercel.app"
 
