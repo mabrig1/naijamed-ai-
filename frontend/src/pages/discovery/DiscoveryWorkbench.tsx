@@ -25,6 +25,14 @@ type ScreeningJob = {
   title: string;
   status: string;
   created_at?: string;
+  worker_id?: string;
+  worker_error?: string;
+  evidence_id?: string;
+  result_sha256?: string;
+  results?: {
+    summary?: string | Record<string, unknown>;
+    [key: string]: unknown;
+  } | null;
   manifest: {
     manifest_version: string;
     engine: string;
@@ -178,6 +186,15 @@ export default function DiscoveryWorkbench() {
 
   useEffect(() => {
     void loadWorkspace();
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await api.post("/api/discovery", { action: "my_screening_jobs" });
+        setJobs(response.data.jobs ?? []);
+      } catch {
+        // Keep the current workspace visible if a background status refresh fails.
+      }
+    }, 10000);
+    return () => window.clearInterval(timer);
   }, []);
 
   async function lookup(kind: "compound" | "protein") {
@@ -273,7 +290,7 @@ export default function DiscoveryWorkbench() {
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-5 text-sm leading-6 text-forest-100">
             <div className="font-semibold text-gold-300">Compute boundary</div>
-            <p className="mt-2">NigerFlora manages research inputs and reproducible job manifests on Vercel. Native AutoDock Vina or molecular-dynamics execution belongs on a dedicated compute worker.</p>
+            <p className="mt-2">NigerFlora creates reproducible screening jobs on Vercel. The authenticated Kaggle PharmaOS worker claims queued jobs, runs the molecular compute stack and returns structured results to the evidence ledger.</p>
           </div>
         </div>
       </section>
@@ -422,7 +439,21 @@ export default function DiscoveryWorkbench() {
                     <span className="rounded-full bg-gray-100 px-2 py-1">exhaustiveness {job.manifest.parameters.exhaustiveness}</span>
                     <span className="rounded-full bg-gray-100 px-2 py-1">modes {job.manifest.parameters.num_modes}</span>
                   </div>
-                  <button className="btn-outline mt-3" onClick={() => downloadJson(`${job.id}-manifest.json`, job.manifest)}>Download JSON manifest</button>
+                  <div className="mt-3 space-y-2 text-xs text-gray-600">
+                    {job.worker_id && <div><span className="font-semibold">Compute worker:</span> {job.worker_id}</div>}
+                    {job.evidence_id && <div><span className="font-semibold">Evidence ledger:</span> {job.evidence_id}</div>}
+                    {job.worker_error && <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-700"><span className="font-semibold">Worker error:</span> {job.worker_error}</div>}
+                    {job.results?.summary && (
+                      <div className="rounded-lg border border-forest-100 bg-forest-50 p-3 text-forest-800">
+                        <div className="font-semibold">Compute result summary</div>
+                        <pre className="mt-1 whitespace-pre-wrap break-words font-sans">{typeof job.results.summary === "string" ? job.results.summary : JSON.stringify(job.results.summary, null, 2)}</pre>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button className="btn-outline" onClick={() => downloadJson(`${job.id}-manifest.json`, job.manifest)}>Download JSON manifest</button>
+                    {job.results && <button className="btn-outline" onClick={() => downloadJson(`${job.id}-results.json`, job.results)}>Download results</button>}
+                  </div>
                 </div>
               ))}
               {!jobs.length && <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">No screening manifests yet.</div>}
