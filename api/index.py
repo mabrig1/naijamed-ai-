@@ -114,6 +114,12 @@ class MolecularBatchRequest(BaseModel):
     smiles: list[str] = Field(min_length=1, max_length=20)
 
 
+class ResearchJobRequest(BaseModel):
+    kind: Literal["molecular-descriptors"] = "molecular-descriptors"
+    smiles: list[str] = Field(min_length=1, max_length=20)
+    title: str = Field(default="Molecular descriptor study", min_length=1, max_length=240)
+
+
 # ----------------------------- auth -----------------------------------------
 
 
@@ -653,4 +659,50 @@ def analyze_molecules(body: MolecularBatchRequest, user: dict[str, Any] = Depend
         "results": results,
         "count": len(results),
         "notice": "Research-only molecular descriptors; not clinical safety, efficacy or ADMET predictions.",
+    }
+
+
+@app.post("/api/research/jobs", status_code=201)
+def create_research_job(body: ResearchJobRequest, user: dict[str, Any] = Depends(current_user)):
+    """Queue a private research job without executing it in the web request."""
+    if user.get("role") not in {"admin", "doctor", "clinic", "patient"}:
+        raise HTTPException(status_code=403, detail="Research access unavailable")
+    if any(not value.strip() or len(value) > 2048 for value in body.smiles):
+        raise HTTPException(status_code=422, detail="Invalid SMILES input length")
+    job = {
+        "_id": str(uuid.uuid4()),
+        "owner_id": str(user["_id"]),
+        "kind": body.kind,
+        "title": body.title,
+        "inputs": {"smiles": body.smiles},
+        "status": "queued",
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    get_db().research_jobs.insert_one(job)
+    return {"job_id": job["_id"], "status": "queued", "created_at": job["created_at"].isoformat()}
+
+
+@app.get("/api/research/jobs")
+def list_research_jobs(user: dict[str, Any] = Depends(current_user)):
+    rows = get_db().research_jobs.find(
+        {"owner_id": str(user["_id"])},
+        {"_id": 1, "kind": 1, "title": 1, "status": 1, "created_at": 1},
+    ).sort("created_at", -1).limit(50)
+    return [{"job_id": row["_id"], "kind": row["kind"], "title": row["title"],
+             "status": row["status"], "created_at": row["created_at"].isoformat()} for row in rows]
+
+
+@app.get("/api/research/jobs/{job_id}")
+def get_research_job(job_id: str, user: dict[str, Any] = Depends(current_user)):
+    job = get_db().research_jobs.find_one(
+        {"_id": job_id, "owner_id": str(user["_id"])},
+        {"owner_id": 0, "inputs": 0},
+    )
+    if not job:
+        raise HTTPException(status_code=404, detail="Research job not found")
+    return {
+        "job_id": job["_id"], "kind": job["kind"], "title": job["title"],
+        "status": job["status"], "created_at": job["created_at"].isoformat(),
+        "updated_at": job["updated_at"].isoformat(),
     }
