@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import { Spinner } from "../../components/Layout";
+import MolecularAnalysis from "./MolecularAnalysis";
 
 interface ResearchService {
   id: string;
@@ -205,6 +206,8 @@ export default function ResearchStudio() {
           );
         })}
       </section>
+
+      <MolecularAnalysis />
 
       {catalog?.synergy_framework && (
         <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
