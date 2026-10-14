@@ -18,6 +18,10 @@ RED_FLAG_PATTERNS: dict[str, str] = {
     "seizure": r"\b(seizure|convulsion|fits? and (not|won'?t) stop)\b",
     "stroke signs": r"\b(face droop|slurred speech|sudden weakness|one side.*weak)\b",
     "severe allergic reaction": r"\b(anaphylaxis|throat swelling|tongue swelling.*breath)\b",
+    "possible heart attack": r"\b(heart attack|pain (in|down) (my |the )?(left )?arm.*(chest|sweat)|chest tightness)\b",
+    "possible stroke": r"\b(sudden (loss of vision|confusion|trouble speaking|numbness|paralysis)|unable to speak|face (is )?drooping)\b",
+    "suicide or self-harm crisis": r"\b(want to (kill myself|end my life)|planning to (kill myself|end my life)|suicidal|attempted suicide|overdose on purpose)\b",
+    "severe dehydration": r"\b(not urinat(ing|ed) (all day|for (a )?day)|severely dehydrated)\b",
     "pregnancy emergency": r"\b(pregnan\w*.*severe bleeding|pregnan\w*.*severe abdominal pain)\b",
 }
 
