@@ -1,3 +1,4 @@
+import PatientDashboard from "./PatientDashboard";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useHerbList } from "../hooks/useHerbs";
@@ -217,7 +218,8 @@ export default function Dashboard() {
             <p className="text-forest-200 text-sm">{greeting},</p>
             <h1 className="text-2xl font-bold mt-0.5">{user.full_name} 👋</h1>
             <p className="text-forest-200 text-sm mt-1">
-              {user.role === "farmer"         && "Manage your herb listings and track market demand."}
+              {user.role === "patient" && <PatientDashboard />}
+      {user.role === "farmer"         && "Manage your herb listings and track market demand."}
               {user.role === "researcher"     && "Submit trials, analyse evidence, and generate formulations."}
               {user.role === "pharma_company" && "Discover herbs, generate formulations, and file NAFDAC docs."}
               {user.role === "admin"          && "Oversee the full NaijaMed AI ecosystem."}
