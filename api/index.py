@@ -309,6 +309,27 @@ def triage(body: TriageRequest, user: dict[str, Any] = Depends(current_user)):
     }
 
 
+@app.get("/api/clinical/my-cases")
+def my_clinical_cases(user: dict[str, Any] = Depends(current_user)):
+    """Patient-owned case summaries only; never return encrypted clinical payloads."""
+    if user.get("role") != "patient":
+        raise HTTPException(status_code=403, detail="Patient account required")
+    patient_id = str(user["_id"])
+    rows = get_db().clinical_cases.find(
+        {"patient_id": patient_id},
+        {"_id": 1, "urgency": 1, "status": 1, "created_at": 1},
+    ).sort("created_at", -1).limit(30)
+    return [
+        {
+            "id": str(row["_id"]),
+            "urgency": row.get("urgency", "routine"),
+            "status": row.get("status", "triaged"),
+            "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+        }
+        for row in rows
+    ]
+
+
 @app.get("/api/clinical/cases/{case_id}")
 def get_case(case_id: str, user: dict[str, Any] = Depends(current_user)):
     case = get_db().clinical_cases.find_one({"_id": case_id})

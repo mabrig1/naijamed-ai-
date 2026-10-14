@@ -9,6 +9,7 @@ import { Spinner } from "./components/Layout";
 const Landing                   = lazy(() => import("./pages/Landing"));
 const Login                     = lazy(() => import("./pages/Auth/Login"));
 const Register                  = lazy(() => import("./pages/Auth/Register"));
+const PatientCaseDetail         = lazy(() => import("./pages/PatientCaseDetail"));
 const Dashboard                 = lazy(() => import("./pages/Dashboard"));
 const ResearchStudio            = lazy(() => import("./pages/research/ResearchStudio"));
 const BioinformaticsServices    = lazy(() => import("./pages/research/BioinformaticsServices"));
@@ -87,6 +88,7 @@ export default function App() {
         {/* Protected — all share the Layout shell */}
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/patient/cases/:id" element={<PatientCaseDetail />} />
           <Route path="/research-studio" element={<ResearchStudio />} />
           <Route path="/research-commerce/admin" element={<ResearchCommerceAdmin />} />
           <Route path="/discovery" element={<DiscoveryWorkbench />} />
