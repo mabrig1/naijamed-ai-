@@ -33,6 +33,7 @@ from app.clinical.multimodal import analyze_medical_image
 from app.clinical.voice import transcribe_audio
 from app.core.config import settings
 from app.core.mongo import get_db
+from app.research.structures import analyze_smiles
 
 
 app = FastAPI(
@@ -107,6 +108,10 @@ class ConsultationCheckoutRequest(BaseModel):
 class SMSRequest(BaseModel):
     phone_number: str = Field(min_length=7, max_length=30)
     message: str = Field(min_length=1, max_length=1000)
+
+
+class MolecularBatchRequest(BaseModel):
+    smiles: list[str] = Field(min_length=1, max_length=20)
 
 
 # ----------------------------- auth -----------------------------------------
@@ -628,4 +633,24 @@ def health():
         "database": "mongodb-atlas",
         "database_ok": database_ok,
         "clinical_engine": "langgraph-agentic-v2",
+    }
+
+
+@app.post("/api/research/molecules/analyze")
+def analyze_molecules(body: MolecularBatchRequest, user: dict[str, Any] = Depends(current_user)):
+    """Authenticated research-only molecular descriptors, limited to 20 structures."""
+    if user.get("role") not in {"admin", "doctor", "clinic", "patient"}:
+        raise HTTPException(status_code=403, detail="Research access is not available for this role")
+    results = []
+    for index, smiles in enumerate(body.smiles):
+        try:
+            results.append({"index": index, "input_smiles": smiles, **analyze_smiles(smiles)})
+        except ValueError as exc:
+            results.append({"index": index, "input_smiles": smiles, "valid": False, "error": str(exc)})
+        except RuntimeError:
+            raise HTTPException(status_code=503, detail="Molecular analysis runtime is unavailable")
+    return {
+        "results": results,
+        "count": len(results),
+        "notice": "Research-only molecular descriptors; not clinical safety, efficacy or ADMET predictions.",
     }
