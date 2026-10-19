@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import { Spinner } from "../../components/Layout";
+import NcheSentBridgePanel from "../../components/NcheSentBridgePanel";
 
 interface ResearchService {
   id: string;
@@ -172,6 +173,8 @@ export default function ResearchStudio() {
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">⚠️ {error}</div>
       )}
+
+      <NcheSentBridgePanel />
 
       <section className="space-y-8">
         {CATEGORY_ORDER.map((category) => {
