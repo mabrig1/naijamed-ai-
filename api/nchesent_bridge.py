@@ -49,6 +49,11 @@ class NcheSentSummary(BaseModel):
                 for k, v in counts.items()
             ) or sum(counts.values()) != self.totalAssessments:
                 raise ValueError(f"Invalid {field} aggregate")
+        # NcheSent v0.2 no longer emits provisional clinical score bands.
+        # Fail closed on old LOW/MODERATE/HIGH counts instead of re-labelling
+        # unvalidated values as malaria-risk surveillance.
+        if self.byBand != {"NOT_SCORED": self.totalAssessments}:
+            raise ValueError("Only NOT_SCORED synthetic assessments are accepted")
         return self
 
 
