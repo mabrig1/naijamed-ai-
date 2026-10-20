@@ -13,12 +13,12 @@ FIXTURE = {
     "source": "NcheSent",
     "dataset": "synthetic",
     "clinicalUse": False,
-    "modelVersion": "0.1.0",
+    "modelVersion": "0.2.0",
     "generatedAt": "2026-10-19T07:00:00.000Z",
     "totalAssessments": 4,
     "byState": {"Lagos": 4},
     "byRegimen": {"AL": 4},
-    "byBand": {"LOW": 4},
+    "byBand": {"NOT_SCORED": 4},
     "notice": "Synthetic and unvalidated. No clinical decisions.",
 }
 
@@ -40,6 +40,14 @@ class ResearchBridgeContractTests(unittest.TestCase):
     def test_mismatched_counts_rejected(self):
         with self.assertRaises(ValidationError):
             NcheSentSummary.model_validate({**FIXTURE, "byState": {"Lagos": 3}})
+
+    def test_old_unvalidated_risk_bands_rejected(self):
+        with self.assertRaises(ValidationError):
+            NcheSentSummary.model_validate({**FIXTURE, "byBand": {"LOW": 4}})
+
+    def test_unsupported_score_band_rejected(self):
+        with self.assertRaises(ValidationError):
+            NcheSentSummary.model_validate({**FIXTURE, "byBand": {"HIGH": 4}})
 
     def test_wrong_schema_rejected(self):
         with self.assertRaises(ValidationError):
