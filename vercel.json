@@ -25,6 +25,10 @@
       "destination": "/api/nchesent_bridge"
     },
     {
+      "source": "/api/nchesent-analysis",
+      "destination": "/api/nchesent_analysis"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
