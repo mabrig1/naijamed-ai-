@@ -59,7 +59,7 @@ export default function NcheSentBridgePanel() {
           <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">PharmaOS / FORMULARY research network</p>
           <h2 id="nchesent-heading" className="mt-2 text-2xl font-bold text-forest-800">NcheSent malaria research bridge</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-            Cross-platform research demonstration from NcheSent. This feed contains synthetic counts only:
+            Cross-platform research demonstration from NcheSent. This v0.2 feed contains unscored synthetic counts only:
             no real patients, clinical monitoring, resistance estimates, or treatment recommendations.
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function NcheSentBridgePanel() {
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <Distribution title="Fictional states" entries={data.byState} />
             <Distribution title="Example regimens" entries={data.byRegimen} />
-            <Distribution title="Unvalidated score bands" entries={data.byBand} />
+            <Distribution title="Clinical scores retired" entries={data.byBand} />
           </div>
           <p className="mt-4 text-xs leading-5 text-amber-900">{data.notice}</p>
           <p className="mt-1 text-xs text-gray-500">
