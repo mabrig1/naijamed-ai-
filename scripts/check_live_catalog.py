@@ -24,7 +24,8 @@ def check(url: str) -> tuple[bool, str]:
                 marker = exc.read(4096).decode("utf-8", errors="ignore").lower()
             except (AttributeError, OSError, ValueError):
                 marker = ""
-            if any(term in marker for term in (
+            content_type = (exc.headers.get("Content-Type", "") if exc.headers else "").lower()
+            if "text/html" in content_type and any(term in marker for term in (
                 "authentication required",
                 "vercel authentication",
                 "deployment protection",
