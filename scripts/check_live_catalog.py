@@ -16,6 +16,28 @@ def check(url: str) -> tuple[bool, str]:
             final_url = response.url
             data = response.read(200_000)
     except HTTPError as exc:
+        # A Vercel-protected preview is not a failing application endpoint.
+        # Inspect only a small non-sensitive signature; never print cookies,
+        # authorization headers or raw HTML from the failed request.
+        if exc.code in (401, 403):
+            try:
+                marker = exc.read(4096).decode("utf-8", errors="ignore").lower()
+            except (AttributeError, OSError, ValueError):
+                marker = ""
+            if any(term in marker for term in (
+                "authentication required",
+                "vercel authentication",
+                "deployment protection",
+                "vercel security checkpoint",
+            )):
+                return False, (
+                    f"HTTP {exc.code}: Vercel deployment protection appears to block "
+                    "anonymous preview verification. API health is unverified."
+                )
+            return False, (
+                f"HTTP {exc.code}: anonymous request rejected. Check preview deployment "
+                "protection or API authorization; API health is unverified."
+            )
         return False, f"HTTP {exc.code}: service endpoint not ready"
     except (URLError, TimeoutError, OSError) as exc:
         return False, f"Network error: {type(exc).__name__}"

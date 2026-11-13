@@ -75,3 +75,22 @@ preview tests and a separate DNS cutover approval.
    are verified separately, without exposing tokens in logs or browser assets.
 6. Rollback: retain current Vercel DNS/alias and previous Worker version;
    revert DNS/Worker Route if the production smoke tests fail.
+
+
+## Protected Preview Verification
+
+Vercel Preview Deployment Protection can return HTTP 401 before the FastAPI
+route executes. The anonymous GitHub diagnostic is informational only and
+does not treat that status as success or proof of an application error.
+
+An owner can visit the Vercel Preview deployment while signed into the
+authorized Vercel team, then open:
+
+- `/api/research-commerce` — must show JSON with a nonempty `services` array
+- `/bioinformatics-services` — must show all 7 services
+- Reference/fallback mode must keep order/checkout buttons disabled
+
+Keep preview protection enabled. Do not expose automation bypass cookies or
+tokens in screenshots, GitHub logs, browser console, or chat. Do not enable
+production payments until authenticated orders and provider callbacks
+have been tested separately. A Vercel Ready status only confirms build completion.

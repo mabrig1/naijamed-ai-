@@ -79,7 +79,7 @@ jobs:
         if: always()
         run: |
           echo "The public API probe runs separately from the PR build gate." >> "$GITHUB_STEP_SUMMARY"
-          echo "Vercel reports Root Directory = frontend; the Python functions are in the repository root." >> "$GITHUB_STEP_SUMMARY"
+          echo "The public production deployment may still run the unchanged main branch; this PR does not update it." >> "$GITHUB_STEP_SUMMARY"
           echo "This test only performs public GETs; it cannot deploy, order, pay or modify DNS." >> "$GITHUB_STEP_SUMMARY"
 
   python-runtime-contract:
@@ -126,5 +126,5 @@ jobs:
         if: always()
         run: |
           echo "Preview catalog diagnostic: ${{ steps.check.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "A protected preview might require authorized access; 401/403 is not a substitute for a successful JSON catalog." >> "$GITHUB_STEP_SUMMARY"
+          echo "401/403 may indicate Vercel Deployment Protection. Only a valid, nonempty JSON catalog confirms API health." >> "$GITHUB_STEP_SUMMARY"
           echo "This step does not deploy, authenticate, order, or take payment." >> "$GITHUB_STEP_SUMMARY"
