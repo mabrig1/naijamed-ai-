@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   catalog-contract:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 Chromium dependencies are supported on Ubuntu 24.04,
+    # whereas ubuntu-latest now resolves to Ubuntu 26.04 on this runner.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
