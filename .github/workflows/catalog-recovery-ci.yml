@@ -27,3 +27,5 @@ jobs:
       - run: node --test cloudflare/tests/worker.test.mjs
       - run: npm ci --prefix frontend --no-audit --no-fund
       - run: npm run build --prefix frontend
+      - name: Validate Cloudflare Worker bundle without deploying
+        run: npx --yes wrangler@4.160.1 deploy --dry-run --config cloudflare/wrangler.jsonc --outdir /tmp/nigerflora-worker-dryrun
