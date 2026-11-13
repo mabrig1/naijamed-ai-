@@ -19,6 +19,7 @@ jobs:
           python-version: "3.12"
       - run: python scripts/export_public_catalog.py --check
       - run: python -m unittest discover -s tests -p "test_public_catalog.py" -v
+      - run: python -m unittest discover -s tests -p "test_live_catalog_probe.py" -v
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -29,3 +30,29 @@ jobs:
       - run: npm run build --prefix frontend
       - name: Validate Cloudflare Worker bundle without deploying
         run: npx --yes wrangler@4.160.1 deploy --dry-run --config cloudflare/wrangler.jsonc --outdir /tmp/nigerflora-worker-dryrun
+
+  production-api-diagnostic:
+    # Independent informational check of the EXISTING live deployment;
+    # it must not turn an otherwise valid PR build red while the owner
+    # adjusts the Vercel Root Directory.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read-only health check of public catalog endpoints
+        id: probe
+        continue-on-error: true
+        run: |
+          python scripts/check_live_catalog.py \
+            https://nigerflora.mabrigkorie.org/api/research-commerce \
+            https://nigerflora-biosciences.vercel.app/api/research-commerce
+      - name: Explain API gate
+        if: always()
+        run: |
+          echo "The public API probe runs separately from the PR build gate." >> "$GITHUB_STEP_SUMMARY"
+          echo "Vercel reports Root Directory = frontend; the Python functions are in the repository root." >> "$GITHUB_STEP_SUMMARY"
+          echo "This test only performs public GETs; it cannot deploy, order, pay or modify DNS." >> "$GITHUB_STEP_SUMMARY"
