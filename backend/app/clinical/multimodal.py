@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import HTTPException, status
 
 from app.core.config import settings
+from .gemini_rest import generate_json_text
 
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -17,10 +18,6 @@ def analyze_medical_image(data: bytes, mime_type: str, context: str | None = Non
     if not settings.effective_gemini_key:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Vision model is not configured")
 
-    import google.generativeai as genai
-
-    genai.configure(api_key=settings.effective_gemini_key)
-    model = genai.GenerativeModel(settings.CLINICAL_VISION_MODEL)
     prompt = (
         "Analyze this healthcare image as decision support only. It may be a paper prescription, lab report, or skin image. "
         "Extract visible text and objective visual features only. Do not diagnose a skin condition, do not recommend or dose medication, "
@@ -29,8 +26,18 @@ def analyze_medical_image(data: bytes, mime_type: str, context: str | None = Non
     )
     if context:
         prompt += f" Context supplied by user: {context[:500]}"
-    response = model.generate_content([prompt, {"mime_type": mime_type, "data": data}])
-    text = (response.text or "").strip().strip("`")
+    text = generate_json_text(
+        "You are a clinical document transcription aid. No diagnosis, medication advice or autonomous treatment.",
+        prompt,
+        image=data,
+        mime_type=mime_type,
+    )
+    if text is None:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Clinical vision provider unavailable; no analysis was generated",
+        )
+    text = text.strip().strip("`")
     if text.lower().startswith("json"):
         text = text[4:].strip()
     try:

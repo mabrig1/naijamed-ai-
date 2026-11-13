@@ -81,3 +81,26 @@ jobs:
           echo "The public API probe runs separately from the PR build gate." >> "$GITHUB_STEP_SUMMARY"
           echo "Vercel reports Root Directory = frontend; the Python functions are in the repository root." >> "$GITHUB_STEP_SUMMARY"
           echo "This test only performs public GETs; it cannot deploy, order, pay or modify DNS." >> "$GITHUB_STEP_SUMMARY"
+
+  python-runtime-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Vercel function runtime requirements only
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Test deterministic safety routing and minimal Gemini transport
+        run: python -m unittest discover -s tests -p "test_lightweight_clinical_runtime.py" -v
+      - name: Verify removed heavy SDKs are not runtime dependencies
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          req = Path("requirements.txt").read_text()
+          for name in ("langgraph", "langchain", "google-generativeai", "anthropic"):
+              assert name not in req, f"Unexpected heavyweight runtime dependency: {name}"
+          print("Runtime dependencies exclude heavy orchestration and SDKs")
+          PY
