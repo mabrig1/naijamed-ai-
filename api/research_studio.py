@@ -227,6 +227,7 @@ def register_researcher(body: StudioAction) -> dict[str, Any]:
     return {"id": str(result.inserted_id), "email": email, "full_name": user["full_name"], "role": "researcher", "is_active": True, "created_at": user["created_at"].isoformat()}
 
 
+@app.get("/api/research-studio")
 @app.get("/api/research_studio")
 def catalog():
     return {
@@ -237,6 +238,7 @@ def catalog():
     }
 
 
+@app.post("/api/research-studio")
 @app.post("/api/research_studio")
 def studio_action(body: StudioAction, request: Request):
     if body.action == "register_researcher":

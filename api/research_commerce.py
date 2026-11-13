@@ -383,6 +383,9 @@ def mark_paid(order: dict[str, Any], gateway_payload: dict[str, Any], gateway: s
     return {"order_id": order["_id"], "payment_status": "paid", "status": "intake", "receipt_number": receipt, "message": "Payment verified. Your project is active and ready for research intake."}
 
 
+# Vercel rewrites select the Python function but may preserve the incoming URL.
+# Keep underscore for direct callers and hyphen for browser-facing routes.
+@app.get("/api/research-commerce")
 @app.get("/api/research_commerce")
 def commerce_catalog():
     return {
@@ -399,6 +402,7 @@ def commerce_catalog():
     }
 
 
+@app.post("/api/research-commerce")
 @app.post("/api/research_commerce")
 def commerce_action(body: CommerceAction, request: Request):
     db = get_db()
@@ -557,6 +561,7 @@ def commerce_action(body: CommerceAction, request: Request):
     raise HTTPException(status_code=400, detail="Unsupported commerce action")
 
 
+@app.post("/api/research-commerce/paystack-webhook")
 @app.post("/api/research_commerce/paystack_webhook")
 async def paystack_webhook(request: Request):
     if not settings.PAYSTACK_SECRET_KEY:

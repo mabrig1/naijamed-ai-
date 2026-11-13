@@ -75,6 +75,7 @@ def configured_upstream() -> str:
     return f"https://{url.hostname}"
 
 
+@app.get("/api/nchesent-bridge", response_model=NcheSentSummary)
 @app.get("/api/nchesent_bridge", response_model=NcheSentSummary)
 async def nchesent_summary() -> NcheSentSummary:
     target = configured_upstream() + "/api/integrations/pharmaos/summary"

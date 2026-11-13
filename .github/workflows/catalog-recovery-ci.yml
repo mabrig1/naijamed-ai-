@@ -95,6 +95,8 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r requirements.txt
       - name: Test deterministic safety routing and minimal Gemini transport
         run: python -m unittest discover -s tests -p "test_lightweight_clinical_runtime.py" -v
+      - name: Verify Vercel hyphenated URLs match FastAPI routes
+        run: python -m unittest discover -s tests -p "test_vercel_api_route_aliases.py" -v
       - name: Verify removed heavy SDKs are not runtime dependencies
         run: |
           python - <<'PY'
