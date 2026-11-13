@@ -1,0 +1,29 @@
+name: NigerFlora public catalog recovery checks
+on:
+  pull_request:
+  push:
+    branches: [fix/nigerflora-services-recovery-cloudflare-preview-20261113]
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/export_public_catalog.py --check
+      - run: python -m unittest discover -s tests -p "test_public_catalog.py" -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: node --test cloudflare/tests/worker.test.mjs
+      - run: npm ci --prefix frontend --no-audit --no-fund
+      - run: npm run build --prefix frontend

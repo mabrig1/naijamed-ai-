@@ -29,7 +29,7 @@
       "destination": "/api/nchesent_analysis"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!(?:api|assets)(?:/|$)).*)",
       "destination": "/index.html"
     }
   ],

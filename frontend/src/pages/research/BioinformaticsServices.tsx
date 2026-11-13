@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import catalogSnapshot from "../../generated/bioinformatics-catalog.json";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -81,7 +83,10 @@ function detail(error: unknown): string {
 
 export default function BioinformaticsServices() {
   const { isAuthenticated, user } = useAuth();
-  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  // A build-time snapshot renders public services without depending on API health.
+  // Never enable ordering from this snapshot: only a verified live API can quote or charge.
+  const [catalog, setCatalog] = useState<Catalog>(catalogSnapshot as Catalog);
+  const [catalogStatus, setCatalogStatus] = useState<"checking" | "live" | "reference">("checking");
   const [market, setMarket] = useState<"local" | "global">("local");
   const [selected, setSelected] = useState<Service | null>(null);
   const [tierId, setTierId] = useState("");
@@ -103,11 +108,39 @@ export default function BioinformaticsServices() {
   const [lead, setLead] = useState({ full_name: "", email: "", whatsapp: "", message: "", website: "" });
   const [leadLoading, setLeadLoading] = useState(false);
 
-  useEffect(() => {
-    api.get<Catalog>("/api/research-commerce")
-      .then(({ data }) => setCatalog(data))
-      .catch((err: unknown) => setError(detail(err)));
+  const loadCatalog = useCallback(async () => {
+    setCatalogStatus("checking");
+    try {
+      // Public requests bypass the authenticated axios interceptor, which would
+      // otherwise redirect an anonymous visitor to login after an API 401.
+      const { data } = await axios.get<Catalog & { catalog_mode?: string; checkout_available?: boolean }>(
+        "/api/research-commerce",
+        {
+          baseURL: api.defaults.baseURL,
+          timeout: 10000,
+          headers: { Accept: "application/json", "Cache-Control": "no-cache" },
+        },
+      );
+      if (!data || !Array.isArray(data.services) || data.services.length === 0 ||
+          !data.services.every((service) => service.id && Array.isArray(service.tiers) && service.tiers.length > 0) ||
+          !Array.isArray(data.addons) || typeof data.integrity_notice !== "string") {
+        throw new Error("The service endpoint did not return a valid JSON catalog");
+      }
+      setCatalog(data);
+      setCatalogStatus(data.checkout_available === false || data.catalog_mode === "reference" ? "reference" : "live");
+    } catch {
+      // A Vercel SPA fallback can return HTTP 200 + HTML instead of JSON.
+      // Fail closed on ordering, but keep the public catalog readable.
+      setCatalog(catalogSnapshot as Catalog);
+      setCatalogStatus("reference");
+      setSelected(null);
+      setQuote(null);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -147,6 +180,7 @@ export default function BioinformaticsServices() {
   }, [catalog]);
 
   async function chooseService(service: Service) {
+    if (catalogStatus !== "live") return;
     setSelected(service);
     setTierId(service.tiers[0]?.id ?? "");
     setAddonIds([]);
@@ -157,6 +191,7 @@ export default function BioinformaticsServices() {
   }
 
   async function requestQuote(serviceId: string, nextTierId: string, nextAddonIds: string[]) {
+    if (catalogStatus !== "live") return;
     setLoadingQuote(true);
     setError("");
     try {
@@ -189,7 +224,7 @@ export default function BioinformaticsServices() {
   }
 
   async function startCheckout() {
-    if (!selected || !quote || !tierId) return;
+    if (catalogStatus !== "live" || !selected || !quote || !tierId) return;
     if (!isAuthenticated) {
       setError("Create a free account or sign in before paying so your project and deliverables can be tracked securely.");
       return;
@@ -220,6 +255,7 @@ export default function BioinformaticsServices() {
   }
 
   async function captureLead() {
+    if (catalogStatus !== "live") return;
     setLeadLoading(true);
     setError("");
     setMessage("");
@@ -263,10 +299,6 @@ export default function BioinformaticsServices() {
         setLoadingQuote(false);
       }
     }
-  }
-
-  if (!catalog) {
-    return <div className="flex min-h-screen items-center justify-center bg-cream"><Spinner /></div>;
   }
 
   return (
@@ -327,6 +359,15 @@ export default function BioinformaticsServices() {
         </section>
 
         <div className="mx-auto max-w-7xl space-y-12 px-4 py-10 sm:px-6">
+          {catalogStatus !== "live" && (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+              <span>{catalogStatus === "checking"
+                ? "Checking live availability. Reference service information is shown while we connect."
+                : "Live ordering is currently unavailable. You can browse reference services and indicative prices, but quotes, requests and payments are disabled until the service API is restored."}</span>
+              <button type="button" className="rounded-lg border border-amber-700 px-3 py-2 font-semibold disabled:opacity-50"
+                disabled={catalogStatus === "checking"} onClick={() => void loadCatalog()}>Retry connection</button>
+            </div>
+          )}
           {message && <div className="rounded-2xl border border-forest-200 bg-forest-50 p-4 text-sm font-medium text-forest-800">✓ {message}</div>}
           {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">⚠️ {error}</div>}
 
@@ -350,10 +391,10 @@ export default function BioinformaticsServices() {
                       <div className="mt-5 rounded-xl bg-cream p-3 text-sm">
                         <div className="font-semibold text-forest-800">{first.name}</div>
                         <div className="mt-1 text-xs text-gray-500">{first.scope}</div>
-                        <div className="mt-2 text-lg font-bold text-forest-700">From {market === "local" ? money("NGN", first.local_ngn) : money("USD", first.global_usd)}</div>
+                        <div className="mt-2 text-lg font-bold text-forest-700">{catalogStatus === "live" ? "From " : "Indicative from "}{market === "local" ? money("NGN", first.local_ngn) : money("USD", first.global_usd)}</div>
                         <div className="text-xs text-gray-500">{first.turnaround}</div>
                       </div>
-                      <button className="btn-primary mt-5" onClick={() => chooseService(service)}>Get instant quote / order</button>
+                      <button className="btn-primary mt-5 disabled:cursor-not-allowed disabled:opacity-50" disabled={catalogStatus !== "live"} onClick={() => chooseService(service)}>{catalogStatus === "live" ? "Get instant quote / order" : "Ordering temporarily unavailable"}</button>
                     </article>
                   );
                 })}
@@ -420,7 +461,7 @@ export default function BioinformaticsServices() {
                 <div><label className="label">WhatsApp, optional</label><input className="input" value={lead.whatsapp} onChange={(e) => setLead((v) => ({ ...v, whatsapp: e.target.value }))} placeholder="Include country code for international numbers" /></div>
                 <div><label className="label">Project brief</label><textarea className="input min-h-28" value={lead.message} onChange={(e) => setLead((v) => ({ ...v, message: e.target.value }))} placeholder="Research question, compounds/plants, targets, dataset size, deadline and required outputs" /></div>
                 <input className="hidden" tabIndex={-1} autoComplete="off" value={lead.website} onChange={(e) => setLead((v) => ({ ...v, website: e.target.value }))} />
-                <button className="btn-primary flex w-full items-center justify-center gap-2" disabled={leadLoading} onClick={captureLead}>{leadLoading ? <><Spinner /> Sending…</> : "Request custom scope"}</button>
+                <button className="btn-primary flex w-full items-center justify-center gap-2" disabled={leadLoading || catalogStatus !== "live"} onClick={captureLead}>{leadLoading ? <><Spinner /> Sending…</> : "Request custom scope"}</button>
               </div>
             </div>
           </section>
@@ -496,7 +537,7 @@ export default function BioinformaticsServices() {
                 </div>
               )}
 
-              <button className="btn-primary flex w-full items-center justify-center gap-2" disabled={checkoutLoading || !quote} onClick={startCheckout}>
+              <button className="btn-primary flex w-full items-center justify-center gap-2" disabled={checkoutLoading || catalogStatus !== "live" || !quote} onClick={startCheckout}>
                 {checkoutLoading ? <><Spinner /> Opening secure checkout…</> : isAuthenticated ? "Pay & start project" : "Create account before payment"}
               </button>
               {selected.sales_note && <p className="text-xs text-gray-500">{selected.sales_note}</p>}
