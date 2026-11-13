@@ -104,3 +104,27 @@ jobs:
               assert name not in req, f"Unexpected heavyweight runtime dependency: {name}"
           print("Runtime dependencies exclude heavy orchestration and SDKs")
           PY
+
+  preview-api-diagnostic:
+    # Read-only, informational, and safe for Vercel Deployment Protection:
+    # the check cannot create orders or modify any infrastructure.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Probe the latest PR preview catalog (read-only)
+        id: check
+        continue-on-error: true
+        run: |
+          python scripts/check_live_catalog.py \
+            https://nigerflora-bioscie-git-903145-victoryonline1-gmailcoms-projects.vercel.app/api/research-commerce
+      - name: Record preview status
+        if: always()
+        run: |
+          echo "Preview catalog diagnostic: ${{ steps.check.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "A protected preview might require authorized access; 401/403 is not a substitute for a successful JSON catalog." >> "$GITHUB_STEP_SUMMARY"
+          echo "This step does not deploy, authenticate, order, or take payment." >> "$GITHUB_STEP_SUMMARY"
