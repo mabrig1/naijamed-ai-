@@ -31,6 +31,29 @@ jobs:
       - name: Validate Cloudflare Worker bundle without deploying
         run: npx --yes wrangler@4.160.1 deploy --dry-run --config cloudflare/wrangler.jsonc --outdir /tmp/nigerflora-worker-dryrun
 
+      - name: Real-browser smoke test — HTML fallback, safe disabled checkout, and recovery
+        run: |
+          set -euo pipefail
+          npm install --prefix frontend --no-save --no-package-lock --ignore-scripts playwright@1.56.1
+          (cd frontend && npx playwright install --with-deps chromium)
+          npm --prefix frontend run preview -- --host 127.0.0.1 --port 4173 > /tmp/nigerflora-vite-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/bioinformatics-services > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != "1" ]]; then
+            cat /tmp/nigerflora-vite-preview.log
+            exit 1
+          fi
+          (cd frontend && node tests/catalog-browser-smoke.mjs)
+
+
   production-api-diagnostic:
     # Independent informational check of the EXISTING live deployment;
     # it must not turn an otherwise valid PR build red while the owner
