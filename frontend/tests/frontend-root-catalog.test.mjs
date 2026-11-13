@@ -8,7 +8,7 @@ const original = JSON.parse(readFileSync(new URL("../src/generated/bioinformatic
 test("legacy frontend-root GET returns catalog JSON in read-only reference mode", async () => {
   const response = GET();
   assert.equal(response.status, 200);
-  assert.match(response.headers.get("Content-Type"), /^application\\/json/);
+  assert.equal(response.headers.get("Content-Type")?.startsWith("application/json"), true);
   assert.match(response.headers.get("Cache-Control"), /no-store/);
   const data = await response.json();
   assert.equal(data.catalog_mode, "reference");
