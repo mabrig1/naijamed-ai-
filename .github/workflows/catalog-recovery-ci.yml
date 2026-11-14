@@ -113,6 +113,20 @@ jobs:
           print("Runtime dependencies exclude heavy orchestration and SDKs")
           PY
 
+  rdkit-offline-screening:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the open-source RDKit computational engine
+        run: python -m pip install --disable-pip-version-check "rdkit>=2024.09"
+      - name: Verify real molecular descriptors and invalid-SMILES handling
+        run: python -m unittest discover -s research_labs -p "test_rdkit_screen.py" -v
+
   preview-api-diagnostic:
     # Read-only, informational, and safe for Vercel Deployment Protection:
     # the check cannot create orders or modify any infrastructure.
