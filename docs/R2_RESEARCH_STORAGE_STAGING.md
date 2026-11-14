@@ -1,19 +1,18 @@
 # NigerFlora private R2 research storage (PREVIEW STAGING ONLY)
 
-This work **does not create** an R2 bucket or connect it to Cloudflare
-production. The previous screenshot only established the proposed bucket
-name \`nigerflora-storage\`, not that bucket creation completed.
+The Cloudflare R2 dashboard screenshot confirms the owner created
+`nigerflora-storage` using Standard storage, with Public Access disabled
+and 0 B stored as of 14 November 2026.
 
-Once you verify the bucket exists in Cloudflare R2 Object Storage, and only
-after you approve staging, deploy using
-\`cloudflare/wrangler.r2.preview.jsonc\`. This alternate config adds a private
-binding \`NIGERFLORA_R2\` but does not attach public R2 domains.
+The default preview Worker Wrangler configuration now contains an R2 binding
+`NIGERFLORA_R2` targeting the existing `nigerflora-storage` bucket.
+Bindings are private runtime references, not publicly available object URLs.
 
-The default \`cloudflare/wrangler.jsonc\` intentionally has **no R2 binding**,
-so deploying from GitHub does not fail before the bucket exists. Both
-\`STORAGE_ENABLED\` and \`R2_WRITES_ENABLED\` start false. For storage to be
-usable, a verified owner must additionally authorize backend authentication
-and API write gates; no secret values are stored in the repository.
+Crucially, `STORAGE_ENABLED=false`, `R2_WRITES_ENABLED=false`, and
+`API_WRITES_ENABLED=false` are still the default values, so neither reading
+nor uploading research objects is enabled merely by connecting the bucket.
+The alternate `wrangler.r2.preview.jsonc` remains for explicit staging
+but is not needed for the standard branch deployment.
 
 Research file routes, currently fail-closed:
 - GET /api/research-files : list current researcher's objects

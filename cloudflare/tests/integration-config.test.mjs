@@ -41,5 +41,8 @@ test("R2 variant is opt-in and never enables writes or public buckets", () => {
   assert.equal(staged.vars.R2_WRITES_ENABLED, "false");
   assert.ok(!("routes" in staged));
   assert.ok(!("custom_domains" in staged));
-  assert.ok(!("r2_buckets" in config));
+  assert.deepEqual(config.r2_buckets, [{ binding: "NIGERFLORA_R2", bucket_name: "nigerflora-storage" }]);
+  assert.equal(config.vars.STORAGE_ENABLED, "false");
+  assert.equal(config.vars.R2_WRITES_ENABLED, "false");
+  assert.equal(config.vars.API_WRITES_ENABLED, "false");
 });
