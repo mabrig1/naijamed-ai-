@@ -4,10 +4,17 @@
   "main": "src/worker.mjs",
   "compatibility_date": "2026-11-12",
   "workers_dev": true,
+  "vars": {
+    "API_PROXY_ENABLED": "false",
+    "API_WRITES_ENABLED": "false",
+    "CHECKOUT_ENABLED": "false"
+  },
   "assets": {
     "directory": "../frontend/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*"
+    ]
   }
 }
