@@ -65,6 +65,42 @@ jobs:
                   redirected = final != url
                   print(f"{url} | HTTP={status} TYPE={content_type.split(';')[0]} BODY={kind} REDIRECTED={redirected} SERVER={server} VERCEL={vercel}")
           PY
+
+      - name: Test public price quote only — no order, lead, payment, or database mutation
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request, urllib.error
+          payload = json.dumps({
+             "action": "quote",
+             "service_id": "scope-consultation",
+             "tier_id": "standard",
+             "market": "local",
+             "addon_ids": []
+          }).encode("utf-8")
+          for host in ("https://nigerflora.mabrigkorie.org", "https://nigerflora-biosciences.vercel.app"):
+              req = urllib.request.Request(host + "/api/research-commerce", data=payload, method="POST",
+                 headers={"Content-Type":"application/json","Accept":"application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=12) as response:
+                      status = response.status
+                      data = response.read(8192)
+                      ct = response.headers.get("Content-Type","")
+              except urllib.error.HTTPError as e:
+                  status = e.code
+                  data = e.read(8192)
+                  ct = e.headers.get("Content-Type","")
+              except Exception as e:
+                  print(host + " POST quote ERROR=" + type(e).__name__)
+                  continue
+              try:
+                  obj = json.loads(data)
+                  data_kind = "quote" if isinstance(obj,dict) and obj.get("service_id")=="scope-consultation" and obj.get("amount_major")==25000 else ("error:" + str(obj.get("detail","unknown"))[:110])
+              except Exception:
+                  data_kind = "non-JSON"
+              print(f"{host} POST quote HTTP={status} TYPE={ct.split(';')[0]} RESULT={data_kind}")
+          PY
       - name: Verify the full-service readiness condition separately
         continue-on-error: true
         run: |
