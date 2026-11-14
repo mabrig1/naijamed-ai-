@@ -246,6 +246,33 @@ export default function BioinformaticsTestLab() {
     setMessage("Cytoscape node table exported. No compound-target interactions have been asserted.");
   }
 
+  function downloadDockingManifest() {
+    if (!compound || !protein) return;
+    const manifest = {
+      schema_version: "nigerflora-docking-preparation-v1",
+      stage: "setup_only",
+      engine: "AutoDock Vina (external validated compute worker required)",
+      status: "NOT_EXECUTED",
+      receptor: { pdb_id: protein.result.external_id, source_url: protein.result.source_url },
+      ligand: { pubchem_cid: compound.result.external_id, source_url: compound.result.source_url },
+      required_preparation: [
+        "Verify binding site and receptor structure, remove/retain cofactors with a recorded rationale",
+        "Prepare and validate receptor and ligand protonation, stereochemistry and PDBQT files",
+        "Determine an experimentally justified docking grid and positive/negative controls",
+        "Record Vina version, scoring function, random seed and compute environment",
+      ],
+      parameters_template: {
+        center_x: null, center_y: null, center_z: null,
+        size_x: null, size_y: null, size_z: null,
+        exhaustiveness: 8, num_modes: 9, seed: 0,
+      },
+      results: null,
+      scientific_notice: "This manifest only verifies public identifiers. No docking run, scoring, affinity or binding prediction has been performed.",
+    };
+    download("nigerflora-vina-preparation.json", JSON.stringify(manifest, null, 2) + "\n", "application/json;charset=utf-8");
+    setMessage("Docking preparation manifest exported. It contains no calculated scores or poses.");
+  }
+
   function downloadReferenceFigure() {
     const records = [compound?.result, protein?.result].filter((value): value is ScientificAsset => Boolean(value));
     if (!records.length) return;
@@ -400,6 +427,8 @@ export default function BioinformaticsTestLab() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button type="button" className="btn-primary" onClick={downloadBrief}>Download test research brief</button>
               {(compound || protein) && <button type="button" className="btn-secondary" onClick={downloadRecords}>Export verified reference JSON</button>}
+              {selected.id === "molecular-docking" && compound && protein &&
+                <button type="button" className="btn-secondary" onClick={downloadDockingManifest}>Export docking setup JSON</button>}
               {selected.id === "network-pharmacology" && (compound || protein) &&
                 <button type="button" className="btn-secondary" onClick={downloadNetworkNodes}>Export Cytoscape nodes CSV</button>}
               {selected.id === "publication-figures" && (compound || protein) &&
