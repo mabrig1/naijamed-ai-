@@ -1,4 +1,5 @@
 name: NigerFlora post-merge live service diagnostic
+# Verification run after production deployment 206471b completed.
 on:
   push:
     branches:
