@@ -107,6 +107,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_vercel_api_route_aliases.py" -v
       - name: Verify Super Admin is never self-assigned and owner endpoints require authorization
         run: python -m unittest discover -s tests -p "test_super_admin_security.py" -v
+      - name: Verify owner and auth routes are reachable through Vercel entrypoint
+        run: python -m unittest discover -s tests -p "test_owner_vercel_routing.py" -v
       - name: Verify removed heavy SDKs are not runtime dependencies
         run: |
           python - <<'PY'
