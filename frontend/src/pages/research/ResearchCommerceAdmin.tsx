@@ -114,7 +114,7 @@ export default function ResearchCommerceAdmin() {
     }
   }
 
-  if (String(user?.role) !== "admin") {
+  if (!["admin", "super_admin"].includes(String(user?.role))) {
     return <PageError message="Admin access is required for the research commerce fulfillment dashboard." />;
   }
 
