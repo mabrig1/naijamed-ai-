@@ -58,6 +58,8 @@ async function proxyApi(request, origin) {
     method: request.method,
     headers,
     body: request.method === "GET" || request.method === "HEAD" ? null : request.body,
+    // Node/Undici and Workers require explicit half-duplex for streamed POST bodies.
+    duplex: "half",
     redirect: "manual",
   });
   let response;
