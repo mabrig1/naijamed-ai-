@@ -64,6 +64,16 @@ try {
   assert.equal(await page.getByRole("button", { name: "Test this workflow" }).count(), snapshot.services.length);
   console.log("PASS: valid catalog metadata changes status only, never enables checkout");
 
+  // Each service must open an interactive, export-capable workspace.
+  for (let i = 0; i < snapshot.services.length; i += 1) {
+    await page.getByRole("button", { name: "Test this workflow" }).nth(i).click();
+    const workspace = page.getByRole("region", { name: "Service testing workspace" });
+    await workspace.waitFor({ state: "visible" });
+    assert.equal(await workspace.getByRole("heading", { name: snapshot.services[i].name }).count(), 1);
+    assert.equal(await workspace.getByRole("button", { name: "Download test research brief" }).isEnabled(), true);
+  }
+  console.log("PASS: all seven service workspaces open and permit brief exports");
+
   await page.getByRole("button", { name: "Test this workflow" }).nth(1).click();
   await page.getByRole("button", { name: "Test compound lookup" }).click();
   await page.getByText("PubChem identity lookup completed.").waitFor();
