@@ -220,11 +220,11 @@ export default function Dashboard() {
               {user.role === "farmer"         && "Manage your herb listings and track market demand."}
               {user.role === "researcher"     && "Submit trials, analyse evidence, and generate formulations."}
               {user.role === "pharma_company" && "Discover herbs, generate formulations, and file NAFDAC docs."}
-              {user.role === "admin"          && "Oversee the full NaijaMed AI ecosystem."}
+              {(user.role === "admin" || user.role === "super_admin") && "Oversee NigerFlora research, clinical and discovery workspaces."}
             </p>
           </div>
           <div className="bg-forest-700/50 px-4 py-2 rounded-lg text-sm text-gold-300 font-medium">
-            🇳🇬 {user.role === "farmer" ? "Farmer" : user.role === "researcher" ? "Researcher" : user.role === "pharma_company" ? "Pharma Company" : "Admin"}
+            🇳🇬 {user.role === "super_admin" ? "Super Admin" : user.role === "farmer" ? "Farmer" : user.role === "researcher" ? "Researcher" : user.role === "pharma_company" ? "Pharma Company" : "Admin"}
           </div>
         </div>
       </div>
@@ -232,7 +232,8 @@ export default function Dashboard() {
       {user.role === "farmer"         && <FarmerDashboard />}
       {user.role === "researcher"     && <ResearcherDashboard />}
       {user.role === "pharma_company" && <PharmaDashboard />}
-      {user.role === "admin"          && <AdminDashboard />}
+      {(user.role === "admin" || user.role === "super_admin") && <AdminDashboard />}
+      {user.role === "super_admin" && <div className="card border-forest-200"><h2 className="section-title">Owner control center</h2><p className="mb-4 text-sm text-gray-600">Review all application modules, accounts and platform readiness without changing payment configuration.</p><QuickAction icon="🛡️" label="Open Super Admin Console" to="/owner" /></div>}
     </div>
   );
 }

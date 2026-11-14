@@ -234,7 +234,7 @@ def user_from_request(request: Request) -> dict[str, Any]:
 
 
 def require_admin(user: dict[str, Any]) -> None:
-    if str(user.get("role", "")) != "admin":
+    if str(user.get("role", "")) not in {"admin", "super_admin"}:
         raise HTTPException(status_code=403, detail="Admin access required")
 
 

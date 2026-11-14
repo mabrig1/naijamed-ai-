@@ -34,6 +34,7 @@ function humanRole(role: string): string {
     clinic: "Clinic",
     hmo: "HMO",
     admin: "Admin",
+    super_admin: "Super Admin",
     farmer: "Farmer",
     pharma_company: "Pharma",
   };
@@ -198,7 +199,8 @@ export default function Layout() {
                       <Link to="/bioinformatics-services" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">💼 Order Bioinformatics Analysis</Link>
                       <Link to="/discovery" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧪 Discovery Workbench</Link>
                       <Link to="/research-studio" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">🧬 Research Studio</Link>
-                      {String(user.role) === "admin" && <Link to="/research-commerce/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">💰 Research Commerce Admin</Link>}
+                      {["admin", "super_admin"].includes(String(user.role)) && <Link to="/research-commerce/admin" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">💰 Research Commerce Admin</Link>}
+                      {user.role === "super_admin" && <Link to="/owner" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm font-semibold text-forest-700 hover:bg-forest-50">🛡️ Super Admin Console</Link>}
                       <Link to="/dashboard" onClick={() => setUserOpen(false)} className="block px-4 py-2 text-sm hover:bg-forest-50">📊 Dashboard</Link>
                       <button type="button" onClick={handleLogout} className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">🚪 Sign out</button>
                     </div>

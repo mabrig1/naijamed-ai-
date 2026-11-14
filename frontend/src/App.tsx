@@ -13,6 +13,7 @@ const Dashboard                 = lazy(() => import("./pages/Dashboard"));
 const ResearchStudio            = lazy(() => import("./pages/research/ResearchStudio"));
 const BioinformaticsServices    = lazy(() => import("./pages/research/BioinformaticsServices"));
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
+const OwnerConsole             = lazy(() => import("./pages/admin/OwnerConsole"));
 const DiscoveryWorkbench        = lazy(() => import("./pages/discovery/DiscoveryWorkbench"));
 
 const HerbList                  = lazy(() => import("./pages/Herbs/HerbList"));
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/research-studio" element={<ResearchStudio />} />
           <Route path="/research-commerce/admin" element={<ResearchCommerceAdmin />} />
+          <Route path="/owner" element={<OwnerConsole />} />
           <Route path="/discovery" element={<DiscoveryWorkbench />} />
 
           {/* Herbs */}
