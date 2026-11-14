@@ -26,6 +26,7 @@ test("every feature gate starts disabled and no secrets or live URLs are bundled
     API_PROXY_ENABLED: "false",
     API_WRITES_ENABLED: "false",
     CHECKOUT_ENABLED: "false",
+    RESEARCH_AI_ENABLED: "false",
   });
   assert.ok(!("BACKEND_ORIGIN" in config.vars));
   assert.ok(!("secrets" in config));
