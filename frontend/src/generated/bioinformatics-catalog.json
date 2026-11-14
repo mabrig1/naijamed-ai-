@@ -1,0 +1,269 @@
+{
+  "studio": "NigerFlora BioSciences — Bioinformatics Consulting & Data Analysis",
+  "services": [
+    {
+      "id": "scope-consultation",
+      "category": "Research Planning",
+      "name": "Bioinformatics Scope Consultation",
+      "short": "A paid project-design session before committing to a larger analysis.",
+      "featured": true,
+      "deliverables": [
+        "20-minute project scope session",
+        "method and data-readiness checklist",
+        "recommended computational workflow",
+        "written quote for the next stage"
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "name": "Scope Call",
+          "local_ngn": 25000,
+          "global_usd": 39,
+          "turnaround": "1-2 business days",
+          "scope": "One research question or thesis project"
+        }
+      ],
+      "sales_note": "The consultation fee may be credited toward an eligible full analysis ordered within 7 days at admin discretion."
+    },
+    {
+      "id": "admet-screening",
+      "category": "Bioinformatics Consulting",
+      "name": "ADMET & Drug-Likeness Screening",
+      "short": "Compound screening with transparent criteria, ranked tables and methods-ready reporting.",
+      "featured": true,
+      "deliverables": [
+        "compound identity and SMILES audit",
+        "ADMET/drug-likeness matrix",
+        "compound prioritization table",
+        "methods-ready workflow notes",
+        "publication-ready plots/tables"
+      ],
+      "tiers": [
+        {
+          "id": "starter",
+          "name": "Starter",
+          "local_ngn": 75000,
+          "global_usd": 110,
+          "turnaround": "3-4 business days",
+          "scope": "Up to 25 compounds"
+        },
+        {
+          "id": "advanced",
+          "name": "Advanced",
+          "local_ngn": 140000,
+          "global_usd": 210,
+          "turnaround": "5-7 business days",
+          "scope": "Up to 75 compounds + deeper prioritization"
+        }
+      ]
+    },
+    {
+      "id": "molecular-docking",
+      "category": "Bioinformatics Consulting",
+      "name": "Molecular Docking Simulation Service",
+      "short": "Reproducible docking workflow, ranked poses, interaction summaries and thesis-ready structural figures.",
+      "featured": true,
+      "deliverables": [
+        "target/ligand preparation record",
+        "AutoDock Vina-compatible parameter manifest",
+        "ranked docking score and interaction table",
+        "binding-site/residue interaction summary",
+        "high-resolution 3D molecular figure pack",
+        "reproducibility appendix"
+      ],
+      "tiers": [
+        {
+          "id": "starter",
+          "name": "Starter Docking",
+          "local_ngn": 150000,
+          "global_usd": 220,
+          "turnaround": "5-7 business days",
+          "scope": "1 target + up to 10 ligands"
+        },
+        {
+          "id": "expanded",
+          "name": "Expanded Docking",
+          "local_ngn": 280000,
+          "global_usd": 420,
+          "turnaround": "7-10 business days",
+          "scope": "Up to 2 targets + 30 ligands"
+        }
+      ]
+    },
+    {
+      "id": "network-pharmacology",
+      "category": "Bioinformatics Consulting",
+      "name": "Network Pharmacology & Cytoscape Analysis",
+      "short": "Compound-target, PPI and pathway/network analysis with editable Cytoscape-ready outputs.",
+      "featured": true,
+      "deliverables": [
+        "compound-target curation table",
+        "target/disease mapping record",
+        "PPI/network construction files",
+        "Cytoscape-ready network files",
+        "network metrics and prioritization",
+        "high-resolution network figures"
+      ],
+      "tiers": [
+        {
+          "id": "starter",
+          "name": "Network Starter",
+          "local_ngn": 120000,
+          "global_usd": 180,
+          "turnaround": "5-7 business days",
+          "scope": "One indication, up to 50 curated compounds"
+        },
+        {
+          "id": "publication",
+          "name": "Publication Package",
+          "local_ngn": 220000,
+          "global_usd": 330,
+          "turnaround": "7-10 business days",
+          "scope": "Up to 100 compounds + PPI/enrichment-ready network + figure pack"
+        }
+      ]
+    },
+    {
+      "id": "publication-figures",
+      "category": "Research Production",
+      "name": "Publication-Ready Scientific Figure Pack",
+      "short": "High-resolution molecular, pathway and network figures for theses, articles and presentations.",
+      "featured": false,
+      "deliverables": [
+        "300-600 DPI PNG/TIFF figures",
+        "journal-size variants",
+        "editable source/session files where applicable",
+        "figure legends and reproducibility labels"
+      ],
+      "tiers": [
+        {
+          "id": "four",
+          "name": "4-Figure Pack",
+          "local_ngn": 60000,
+          "global_usd": 90,
+          "turnaround": "2-4 business days",
+          "scope": "Up to 4 final figures"
+        },
+        {
+          "id": "ten",
+          "name": "10-Figure Pack",
+          "local_ngn": 120000,
+          "global_usd": 180,
+          "turnaround": "4-6 business days",
+          "scope": "Up to 10 final figures"
+        }
+      ]
+    },
+    {
+      "id": "thesis-computational-package",
+      "category": "Postgraduate Packages",
+      "name": "M.Sc./Ph.D. Computational Research Package",
+      "short": "Integrated network pharmacology, ADMET, docking, visualization and reproducibility support.",
+      "featured": true,
+      "deliverables": [
+        "computational research design review",
+        "network pharmacology workflow",
+        "ADMET screening",
+        "molecular docking workflow",
+        "publication-ready figure pack",
+        "methods/reproducibility appendix",
+        "results interpretation session"
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "name": "Standard Thesis Package",
+          "local_ngn": 300000,
+          "global_usd": 450,
+          "turnaround": "10-14 business days",
+          "scope": "One coherent thesis study with agreed dataset limits"
+        },
+        {
+          "id": "extended",
+          "name": "Extended Thesis Package",
+          "local_ngn": 500000,
+          "global_usd": 750,
+          "turnaround": "15-20 business days",
+          "scope": "Larger multi-target or multi-plant study + revision round"
+        }
+      ]
+    },
+    {
+      "id": "department-analysis-bundle",
+      "category": "Institutional Services",
+      "name": "Academic Department Analysis Bundle",
+      "short": "A 30-day analysis bundle for departments, labs and supervisors handling multiple postgraduate projects.",
+      "featured": true,
+      "deliverables": [
+        "up to 3 scoped computational projects",
+        "shared methods/reproducibility templates",
+        "departmental progress dashboard",
+        "two group review sessions",
+        "priority scheduling during the service window"
+      ],
+      "tiers": [
+        {
+          "id": "department",
+          "name": "30-Day Department Bundle",
+          "local_ngn": 650000,
+          "global_usd": 950,
+          "turnaround": "30-day service window",
+          "scope": "Up to 3 scoped projects; oversized datasets quoted separately"
+        }
+      ]
+    }
+  ],
+  "addons": [
+    {
+      "id": "rush",
+      "name": "Priority turnaround",
+      "description": "Queue priority where technically feasible; target turnaround is shortened but not guaranteed until scope review.",
+      "percent": 35
+    },
+    {
+      "id": "extra-revision",
+      "name": "Additional revision round",
+      "description": "One additional revision round after the included review cycle.",
+      "local_ngn": 30000,
+      "global_usd": 45
+    },
+    {
+      "id": "data-cleaning",
+      "name": "Dataset cleaning & identifier harmonization",
+      "description": "Resolve common identifier, duplicate and formatting issues before analysis.",
+      "local_ngn": 40000,
+      "global_usd": 60
+    }
+  ],
+  "markets": [
+    {
+      "id": "local",
+      "name": "Nigeria / Local",
+      "currency": "NGN",
+      "recommended_gateway": "paystack"
+    },
+    {
+      "id": "global",
+      "name": "International",
+      "currency": "USD",
+      "recommended_gateway": "flutterwave"
+    }
+  ],
+  "gateways": [
+    "paystack",
+    "flutterwave"
+  ],
+  "order_statuses": [
+    "awaiting_payment",
+    "intake",
+    "queued",
+    "running",
+    "review",
+    "delivered",
+    "revision",
+    "closed"
+  ],
+  "integrity_notice": "NigerFlora provides computational analysis, reproducibility records, visualization and research support. Outputs are hypothesis-generating research evidence and do not replace experimental validation, clinical evidence, supervisor review, ethics approval, regulatory review or the researcher's authorship responsibility.",
+  "catalog_mode": "reference",
+  "checkout_available": false
+}
