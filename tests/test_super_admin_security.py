@@ -71,6 +71,35 @@ class OwnerSecurityTests(unittest.TestCase):
         self.assertNotIn("token_version", response.text)
         self.assertNotIn("SECRET_HASH", response.text)
 
+    def test_owner_role_change_is_audited_and_revokes_existing_sessions(self):
+        from bson import ObjectId
+        actor = {"_id": ObjectId("507f1f77bcf86cd799439011"), "role": "super_admin"}
+        target_id = ObjectId("507f1f77bcf86cd799439012")
+        app.dependency_overrides[index.current_user] = lambda: actor
+        db = Mock()
+        db.users.find_one.side_effect = [
+            {"_id": target_id, "role": "researcher", "email": "member@example.com",
+             "full_name": "Member", "is_active": True},
+            {"_id": target_id, "role": "admin", "email": "member@example.com",
+             "full_name": "Member", "is_active": True},
+        ]
+        db.users.update_one.return_value.matched_count = 1
+        with patch.object(index, "get_db", return_value=db):
+            response = TestClient(app).patch(
+                "/api/owner/users/507f1f77bcf86cd799439012",
+                json={"role": "admin"},
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["user"]["role"], "admin")
+        self.assertTrue(response.json()["sessions_revoked"])
+        update = db.users.update_one.call_args.args[1]
+        self.assertEqual(update["$inc"]["token_version"], 1)
+        self.assertEqual(update["$set"]["role"], "admin")
+        audit = db.admin_audit_logs.insert_one.call_args.args[0]
+        self.assertEqual(audit["action"], "owner.user_update")
+        self.assertEqual(audit["before"]["role"], "researcher")
+        self.assertEqual(audit["after"]["role"], "admin")
+
     def test_owner_cannot_promote_self_or_other_owners(self):
         from bson import ObjectId
         account = {"_id": ObjectId("507f1f77bcf86cd799439011"), "role": "super_admin"}
