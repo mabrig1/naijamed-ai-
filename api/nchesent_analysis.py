@@ -127,6 +127,7 @@ def analyze_synthetic_cohort(cohort: SyntheticCohort) -> dict:
     }
 
 
+@app.post("/api/nchesent-analysis")
 @app.post("/api/nchesent_analysis")
 async def nchesent_analysis(cohort: SyntheticCohort) -> dict:
     return analyze_synthetic_cohort(cohort)

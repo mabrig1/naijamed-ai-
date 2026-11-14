@@ -3,23 +3,13 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
+from .gemini_rest import embed_query
 
 
 def _embed_query(text: str) -> list[float] | None:
     if not settings.effective_gemini_key:
         return None
-    try:
-        import google.generativeai as genai
-
-        genai.configure(api_key=settings.effective_gemini_key)
-        result = genai.embed_content(
-            model=settings.GEMINI_EMBEDDING_MODEL,
-            content=text,
-            task_type="retrieval_query",
-        )
-        return result.get("embedding")
-    except Exception:
-        return None
+    return embed_query(text)
 
 
 def retrieve_protocols(query: str, limit: int = 5) -> list[dict[str, Any]]:

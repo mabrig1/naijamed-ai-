@@ -1,0 +1,154 @@
+name: NigerFlora public catalog recovery checks
+on:
+  pull_request:
+  push:
+    branches: [fix/nigerflora-services-recovery-cloudflare-preview-20261113]
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-contract:
+    # Playwright 1.56 Chromium dependencies are supported on Ubuntu 24.04,
+    # whereas ubuntu-latest now resolves to Ubuntu 26.04 on this runner.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/export_public_catalog.py --check
+      - run: python -m unittest discover -s tests -p "test_public_catalog.py" -v
+      - run: python -m unittest discover -s tests -p "test_live_catalog_probe.py" -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: node --test cloudflare/tests/worker.test.mjs
+      - name: Verify research AI free-only inference and drug-discovery safety
+        run: node --test cloudflare/tests/drug-discovery.test.mjs
+      - name: Check private R2 API access controls without any cloud credentials
+        run: node --test cloudflare/tests/research-files.test.mjs
+      - name: Verify Cloudflare preview configuration has no production routes or enabled writes
+        run: node --test cloudflare/tests/integration-config.test.mjs
+      - name: Validate legacy frontend-root read-only API function
+        run: node --test frontend/tests/frontend-root-catalog.test.mjs
+      - run: npm ci --prefix frontend --no-audit --no-fund
+      - run: npm run build --prefix frontend
+      - name: Validate Cloudflare Worker bundle without deploying
+        run: npx --yes wrangler@4.160.1 deploy --dry-run --config cloudflare/wrangler.jsonc --outdir /tmp/nigerflora-worker-dryrun
+
+      - name: Real-browser smoke test — HTML fallback, safe disabled checkout, and recovery
+        run: |
+          set -euo pipefail
+          npm install --prefix frontend --no-save --no-package-lock --ignore-scripts playwright@1.56.1
+          (cd frontend && npx playwright install --with-deps chromium)
+          npm --prefix frontend run preview -- --host 127.0.0.1 --port 4173 > /tmp/nigerflora-vite-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/bioinformatics-services > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != "1" ]]; then
+            cat /tmp/nigerflora-vite-preview.log
+            exit 1
+          fi
+          (cd frontend && node tests/catalog-browser-smoke.mjs)
+
+
+  production-api-diagnostic:
+    # Independent informational check of the EXISTING live deployment;
+    # it must not turn an otherwise valid PR build red while the owner
+    # adjusts the Vercel Root Directory.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read-only health check of public catalog endpoints
+        id: probe
+        continue-on-error: true
+        run: |
+          python scripts/check_live_catalog.py \
+            https://nigerflora.mabrigkorie.org/api/research-commerce \
+            https://nigerflora-biosciences.vercel.app/api/research-commerce
+      - name: Explain API gate
+        if: always()
+        run: |
+          echo "The public API probe runs separately from the PR build gate." >> "$GITHUB_STEP_SUMMARY"
+          echo "The public production deployment may still run the unchanged main branch; this PR does not update it." >> "$GITHUB_STEP_SUMMARY"
+          echo "This test only performs public GETs; it cannot deploy, order, pay or modify DNS." >> "$GITHUB_STEP_SUMMARY"
+
+  python-runtime-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Vercel function runtime requirements only
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Test deterministic safety routing and minimal Gemini transport
+        run: python -m unittest discover -s tests -p "test_lightweight_clinical_runtime.py" -v
+      - name: Verify Vercel hyphenated URLs match FastAPI routes
+        run: python -m unittest discover -s tests -p "test_vercel_api_route_aliases.py" -v
+      - name: Verify removed heavy SDKs are not runtime dependencies
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          req = Path("requirements.txt").read_text()
+          for name in ("langgraph", "langchain", "google-generativeai", "anthropic"):
+              assert name not in req, f"Unexpected heavyweight runtime dependency: {name}"
+          print("Runtime dependencies exclude heavy orchestration and SDKs")
+          PY
+
+  rdkit-offline-screening:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the open-source RDKit computational engine
+        run: python -m pip install --disable-pip-version-check "rdkit>=2024.09"
+      - name: Verify real molecular descriptors and invalid-SMILES handling
+        run: python -m unittest discover -s research_labs -p "test_rdkit_screen.py" -v
+
+  preview-api-diagnostic:
+    # Read-only, informational, and safe for Vercel Deployment Protection:
+    # the check cannot create orders or modify any infrastructure.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Probe the latest PR preview catalog (read-only)
+        id: check
+        continue-on-error: true
+        run: |
+          python scripts/check_live_catalog.py \
+            https://nigerflora-bioscie-git-903145-victoryonline1-gmailcoms-projects.vercel.app/api/research-commerce
+      - name: Record preview status
+        if: always()
+        run: |
+          echo "Preview catalog diagnostic: ${{ steps.check.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "401/403 may indicate Vercel Deployment Protection. Only a valid, nonempty JSON catalog confirms API health." >> "$GITHUB_STEP_SUMMARY"
+          echo "This step does not deploy, authenticate, order, or take payment." >> "$GITHUB_STEP_SUMMARY"

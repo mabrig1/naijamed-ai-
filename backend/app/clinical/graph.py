@@ -1,34 +1,22 @@
-from langgraph.graph import END, START, StateGraph
+"""Small deterministic clinical graph.
+
+Preserves the same LangGraph node order and emergency/blocked branches without
+bundling the entire LangChain/LangGraph runtime into every Vercel Function.
+Safety decisions always run first; model output must never override them.
+"""
+from __future__ import annotations
 
 from .agents import ClinicalState, knowledge_node, referral_node, safety_node, scribe_node, triage_node
 
 
-def _route_after_safety(state: ClinicalState) -> str:
-    if state.get("blocked"):
-        return "blocked"
-    if state.get("emergency"):
-        return "emergency"
-    return "triage"
-
-
-_builder = StateGraph(ClinicalState)
-_builder.add_node("safety", safety_node)
-_builder.add_node("triage", triage_node)
-_builder.add_node("knowledge", knowledge_node)
-_builder.add_node("referral", referral_node)
-_builder.add_node("scribe", scribe_node)
-_builder.add_edge(START, "safety")
-_builder.add_conditional_edges(
-    "safety",
-    _route_after_safety,
-    {"blocked": END, "emergency": "referral", "triage": "triage"},
-)
-_builder.add_edge("triage", "knowledge")
-_builder.add_edge("knowledge", "referral")
-_builder.add_edge("referral", "scribe")
-_builder.add_edge("scribe", END)
-clinical_graph = _builder.compile()
-
-
 def run_clinical_workflow(payload: ClinicalState) -> ClinicalState:
-    return clinical_graph.invoke(payload)
+    state: ClinicalState = dict(payload)
+    state.update(safety_node(state))
+    if state.get("blocked"):
+        return state
+    if not state.get("emergency"):
+        state.update(triage_node(state))
+        state.update(knowledge_node(state))
+    state.update(referral_node(state))
+    state.update(scribe_node(state))
+    return state

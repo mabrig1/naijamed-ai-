@@ -2,6 +2,7 @@ import json
 from typing import Any, TypedDict
 
 from app.core.config import settings
+from .gemini_rest import generate_json_text
 
 from .guardrails import asks_for_self_medication, evaluate_input, patient_safety_notice
 from .rag import retrieve_protocols
@@ -35,12 +36,9 @@ def _gemini_json(system: str, prompt: str) -> dict[str, Any] | list[Any] | None:
     if not settings.effective_gemini_key:
         return None
     try:
-        import google.generativeai as genai
-
-        genai.configure(api_key=settings.effective_gemini_key)
-        model = genai.GenerativeModel(model_name=settings.CLINICAL_LLM_MODEL, system_instruction=system)
-        response = model.generate_content(prompt)
-        text = (response.text or "").strip()
+        text = (generate_json_text(system, prompt) or "").strip()
+        if not text:
+            return None
         if text.startswith("```"):
             text = text.strip("`")
             if text.lower().startswith("json"):

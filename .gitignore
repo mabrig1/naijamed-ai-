@@ -43,3 +43,7 @@ htmlcov/
 
 # TypeScript
 *.tsbuildinfo
+
+# Cloudflare local secrets and build cache
+.dev.vars*
+.wrangler/

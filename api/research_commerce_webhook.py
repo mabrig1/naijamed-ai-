@@ -42,6 +42,7 @@ def mark_paid(order: dict[str, Any], gateway_payload: dict[str, Any]) -> None:
     )
 
 
+@app.post("/api/research-commerce/paystack-webhook")
 @app.post("/api/research_commerce_webhook")
 async def paystack_webhook(request: Request):
     if not settings.PAYSTACK_SECRET_KEY:
