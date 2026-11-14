@@ -281,15 +281,21 @@ def discovery_info():
 
 @app.post("/api/discovery")
 def discovery_action(body: DiscoveryAction, request: Request):
+    # Scientific identifiers and published structures may be searched without
+    # an account. These actions only read trusted public science providers and
+    # MUST NOT access MongoDB, user records or private research datasets.
+    # Saving, creating jobs, or listing workspace data remain authenticated.
+    if body.action in {"lookup_compound", "lookup_protein"}:
+        query_value = (body.query or "").strip()
+        if not query_value or len(query_value) > 80 or any(ord(c) < 32 for c in query_value):
+            raise HTTPException(status_code=422, detail="Enter a public scientific identifier or name (1–80 characters)")
+        if body.action == "lookup_compound":
+            return {"result": pubchem_lookup(query_value), "scientific_notice": SCIENTIFIC_NOTICE}
+        return {"result": rcsb_lookup(query_value), "scientific_notice": SCIENTIFIC_NOTICE}
+
     user = user_from_request(request)
     user_id = str(user["_id"])
     db = get_db()
-
-    if body.action == "lookup_compound":
-        return {"result": pubchem_lookup(body.query or ""), "scientific_notice": SCIENTIFIC_NOTICE}
-
-    if body.action == "lookup_protein":
-        return {"result": rcsb_lookup(body.query or ""), "scientific_notice": SCIENTIFIC_NOTICE}
 
     if body.action == "save_asset":
         kind, external_id, safe_asset = normalize_asset(body.asset or {})

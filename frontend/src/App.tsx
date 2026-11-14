@@ -15,6 +15,7 @@ const BioinformaticsServices    = lazy(() => import("./pages/research/Bioinforma
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
 const OwnerConsole             = lazy(() => import("./pages/admin/OwnerConsole"));
 const DiscoveryWorkbench        = lazy(() => import("./pages/discovery/DiscoveryWorkbench"));
+const ScienceExplorer           = lazy(() => import("./pages/discovery/ScienceExplorer"));
 
 const HerbList                  = lazy(() => import("./pages/Herbs/HerbList"));
 const HerbDetail                = lazy(() => import("./pages/Herbs/HerbDetail"));
@@ -82,6 +83,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/bioinformatics-services" element={<BioinformaticsServices />} />
+        <Route path="/explore" element={<ScienceExplorer />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 

@@ -1,0 +1,49 @@
+name: NigerFlora production auth boundary smoke check
+on:
+  push:
+    branches: [feat/nigerflora-public-research-explorer-20261114]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-public-auth-boundary:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Confirm anonymous requests cannot access owner or user data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError
+          hosts = [
+              "https://nigerflora.mabrigkorie.org",
+              "https://nigerflora-biosciences.vercel.app",
+          ]
+          paths = ["/api/auth/me", "/api/owner/overview", "/api/owner/users"]
+          failure = False
+          for host in hosts:
+              for path in paths:
+                  try:
+                      with urlopen(Request(host+path, headers={"Accept":"application/json"}),
+                                   timeout=20) as response:
+                          status = response.status
+                          ctype = response.headers.get("Content-Type", "")
+                          body = response.read(1024)
+                  except HTTPError as e:
+                      status = e.code
+                      ctype = e.headers.get("Content-Type", "")
+                      body = e.read(1024)
+                  except Exception as e:
+                      print(f"{host}{path}: request error {type(e).__name__}")
+                      failure = True
+                      continue
+                  ok = status == 401 and "json" in ctype.lower()
+                  print(f"{host}{path}: HTTP {status}, JSON={('json' in ctype.lower())}, expected anonymous 401, PASS={ok}")
+                  if not ok:
+                      failure = True
+          if failure:
+              raise SystemExit("Auth routing or authorization is not healthy")
+          PY

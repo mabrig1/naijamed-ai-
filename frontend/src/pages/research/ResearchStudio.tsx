@@ -40,8 +40,7 @@ export default function ResearchStudio() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ResearchService | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [paymentMessage, setPaymentMessage] = useState("");
+  const [briefMessage, setBriefMessage] = useState("");
   const [orderForm, setOrderForm] = useState({ project_title: "", institution: "", notes: "" });
   const [plants, setPlants] = useState("");
   const [indication, setIndication] = useState("");
@@ -59,20 +58,6 @@ export default function ResearchStudio() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const reference = params.get("reference") ?? params.get("trxref");
-    if (!reference) return;
-    setPaymentMessage("Verifying your payment…");
-    api.post<{ message: string }>("/api/research-studio", { action: "verify_order", reference })
-      .then(({ data }) => setPaymentMessage(data.message))
-      .catch((err: unknown) => {
-        const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-        setPaymentMessage(message ?? "Payment verification is still pending. Your order reference has been retained.");
-      })
-      .finally(() => window.history.replaceState({}, "", "/research-studio"));
-  }, []);
-
   const grouped = useMemo(() => {
     const result = new Map<string, ResearchService[]>();
     for (const service of catalog?.services ?? []) {
@@ -83,26 +68,43 @@ export default function ResearchStudio() {
     return result;
   }, [catalog]);
 
-  async function startCheckout() {
+  function downloadBrief() {
     if (!selected) return;
-    setCheckoutLoading(true);
-    setError("");
-    try {
-      const { data } = await api.post<{ authorization_url: string }>("/api/research-studio", {
-        action: "create_order",
-        service_id: selected.id,
-        project_title: orderForm.project_title || undefined,
-        institution: orderForm.institution || undefined,
-        notes: orderForm.notes || undefined,
-        callback_url: `${window.location.origin}/research-studio`,
-      });
-      if (data.authorization_url) window.location.assign(data.authorization_url);
-    } catch (err: unknown) {
-      const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(message ?? "Unable to start checkout.");
-    } finally {
-      setCheckoutLoading(false);
-    }
+    const projectTitle = orderForm.project_title.trim() || selected.name;
+    const markdown = [
+      "# NigerFlora BioSciences — Research Planning Brief",
+      "",
+      "Prepared: " + new Date().toISOString().slice(0, 10),
+      "Research project: " + projectTitle,
+      "Institution: " + (orderForm.institution.trim() || "To be confirmed"),
+      "Selected methodology: " + selected.name,
+      "Category: " + selected.category,
+      "",
+      "## Research purpose",
+      selected.description,
+      "",
+      "## Planned outputs",
+      ...selected.deliverables.map((item) => "- " + item),
+      "",
+      "## Researcher notes",
+      orderForm.notes.trim() || "To be provided by the researcher.",
+      "",
+      "## Validation and research integrity",
+      catalog?.integrity_notice || "Independently verify methods and all results.",
+      "",
+      "This is a preliminary planning brief, not a completed analysis,",
+      "confirmed service request, laboratory report, purchase or proof of efficacy.",
+      "No order, payment or clinical claim was created by this export.",
+      "",
+    ].join("\n");
+    const url = URL.createObjectURL(new Blob([markdown], { type: "text/markdown;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "nigerflora-research-brief.md";
+    link.click();
+    URL.revokeObjectURL(url);
+    setBriefMessage("Research planning brief downloaded. No payment or order was created.");
+    setSelected(null);
   }
 
   async function createSynergyProject() {
@@ -144,11 +146,11 @@ export default function ResearchStudio() {
               Mabrig HealthOS · Research & Discovery Studio
             </div>
             <h1 className="max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
-              Turn computational research expertise into premium digital services.
+              Turn computational research ideas into structured, reproducible projects.
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-7 text-forest-100 md:text-base">
-              Order network pharmacology, ADMET screening, molecular docking support, scientific visualization,
-              grant architecture and practical in-silico research training from one workflow.
+              Explore network pharmacology, ADMET methods, molecular docking workflows, scientific visualization,
+              grant architecture and practical in-silico research planning before any payment.
             </p>
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-forest-100">
               {['M.Sc. & Ph.D. research', 'Academic departments', 'Herbal discovery teams', 'Grant applicants'].map((item) => (
@@ -166,8 +168,8 @@ export default function ResearchStudio() {
         </div>
       </section>
 
-      {paymentMessage && (
-        <div className="rounded-xl border border-forest-200 bg-forest-50 p-4 text-sm font-medium text-forest-800">✓ {paymentMessage}</div>
+      {briefMessage && (
+        <div role="status" className="rounded-xl border border-forest-200 bg-forest-50 p-4 text-sm font-medium text-forest-800">✓ {briefMessage}</div>
       )}
 
       {error && (
@@ -185,7 +187,7 @@ export default function ResearchStudio() {
               <div className="mb-4 flex items-end justify-between gap-3">
                 <div>
                   <h2 className="text-2xl font-bold text-forest-800">{category}</h2>
-                  <p className="mt-1 text-sm text-gray-500">Defined deliverables, transparent starting prices and project tracking.</p>
+                  <p className="mt-1 text-sm text-gray-500">Explore methods and deliverables; prepare a research brief without creating an order.</p>
                 </div>
               </div>
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -199,7 +201,7 @@ export default function ResearchStudio() {
                     </ul>
                     <div className="mt-6 flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
                       <span className="font-bold text-forest-700">{service.price_label}</span>
-                      <button className="btn-primary" onClick={() => setSelected(service)}>Request service</button>
+                      <button className="btn-primary" onClick={() => { setBriefMessage(""); setSelected(service); }}>Prepare brief</button>
                     </div>
                   </article>
                 ))}
@@ -276,7 +278,7 @@ export default function ResearchStudio() {
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-forest-500">Service request</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-forest-500">Research planning brief</div>
                 <h3 className="mt-1 text-2xl font-bold text-gray-900">{selected.name}</h3>
                 <div className="mt-1 font-semibold text-forest-700">{selected.price_label}</div>
               </div>
@@ -296,10 +298,10 @@ export default function ResearchStudio() {
                 <textarea className="input min-h-28" value={orderForm.notes} onChange={(e) => setOrderForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Describe compounds, plants, targets, datasets, deadline and expected outputs." />
               </div>
               <div className="rounded-lg bg-gold-50 p-3 text-xs leading-5 text-gray-600">
-                Payment starts the service request. Final scope may be adjusted only with your approval if the dataset or computational workload materially differs from the base package.
+                Your brief is generated locally in your browser and can be reviewed before any future service request. No account change, order or payment is made here.
               </div>
-              <button className="btn-primary flex w-full items-center justify-center gap-2" disabled={checkoutLoading} onClick={startCheckout}>
-                {checkoutLoading ? <><Spinner /> Opening secure checkout…</> : `Continue to Paystack · ${selected.price_label}`}
+              <button className="btn-primary flex w-full items-center justify-center gap-2" onClick={downloadBrief}>
+                Download research brief (.md)
               </button>
             </div>
           </div>
