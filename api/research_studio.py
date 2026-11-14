@@ -241,6 +241,9 @@ def catalog():
 @app.post("/api/research-studio")
 @app.post("/api/research_studio")
 def studio_action(body: StudioAction, request: Request):
+    if body.action == "create_order" and not settings.RESEARCH_CHECKOUT_ENABLED:
+        raise HTTPException(status_code=503, detail="Research checkout is disabled during functionality testing")
+
     if body.action == "register_researcher":
         return register_researcher(body)
 

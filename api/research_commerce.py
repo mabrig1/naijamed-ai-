@@ -405,6 +405,9 @@ def commerce_catalog():
 @app.post("/api/research-commerce")
 @app.post("/api/research_commerce")
 def commerce_action(body: CommerceAction, request: Request):
+    if body.action == "create_order" and not settings.RESEARCH_CHECKOUT_ENABLED:
+        raise HTTPException(status_code=503, detail="Research checkout is disabled during functionality testing")
+
     # Price quotes are pure calculations. Never require MongoDB or initialize
     # database indexes merely to display package pricing to a visitor.
     if body.action == "quote":
