@@ -2,19 +2,19 @@ import { Link } from "react-router-dom";
 
 const FEATURES = [
   { icon: "🩺", title: "Clinical Navigation", desc: "Agentic triage, red-flag escalation, clinician handoff and structured SOAP-ready case summaries." },
-  { icon: "🧬", title: "Bioinformatics Consulting", desc: "Order network pharmacology, ADMET, molecular docking, Cytoscape networks and publication-ready figures with tracked delivery." },
+  { icon: "🧬", title: "Bioinformatics Workflows", desc: "Explore compound evidence, prepare reproducible network pharmacology and ADMET protocols, and design research before purchasing services." },
   { icon: "🌿", title: "Ethnobotanical Intelligence", desc: "Organize Nigerian medicinal-plant evidence, compounds, regional knowledge and discovery datasets." },
   { icon: "🔬", title: "Computational Drug Discovery", desc: "Build reproducible in-silico workflows for target mapping, docking, interaction networks and validation planning." },
   { icon: "📋", title: "Regulatory Workflows", desc: "Support evidence organization, compliance preparation and regulated product-development pathways." },
-  { icon: "🌍", title: "Local + Global Commerce", desc: "NGN and international service packages, secure checkout, project tracking and deliverable handoff." },
+  { icon: "🌍", title: "Research Planning & Exports", desc: "Build downloadable project briefs and scientific reference records. Payments and full service fulfillment are later milestones." },
 ];
 
-const REVENUE = [
-  ["Scope Consultation", "₦25,000 / $39"],
-  ["ADMET Screening", "From ₦75,000 / $110"],
-  ["Network Pharmacology", "From ₦120,000 / $180"],
-  ["Molecular Docking", "From ₦150,000 / $220"],
-  ["M.Sc./Ph.D. Package", "From ₦300,000 / $450"],
+const WORKFLOWS = [
+  ["Public Compound Explorer", "PubChem compound profiles and identifiers"],
+  ["Protein Structure Lookup", "RCSB PDB experimental structure records"],
+  ["Discovery Workbench", "Saved assets and screening job manifests"],
+  ["Research Studio", "Polyherbal research project planning"],
+  ["Reproducible Exports", "Research briefs and source-linked JSON"],
 ];
 
 export default function Landing() {
@@ -29,7 +29,8 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Bioinformatics Services</Link>
+          <Link to="/explore" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Science Explorer</Link>
+          <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Services</Link>
           <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Sign In</Link>
           <Link to="/register" className="btn-secondary px-4 py-2 text-sm">Get Started</Link>
         </div>
@@ -45,32 +46,32 @@ export default function Landing() {
               From research question to <span className="text-gold-300">computational evidence</span>, tracked analysis and publication-ready outputs.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-forest-100">
-              NigerFlora BioSciences combines responsible AI health workflows with paid bioinformatics consulting for M.Sc., Ph.D., research groups and academic departments.
+              NigerFlora BioSciences combines responsible AI health workflows with bioinformatics workflows and guided research planning for M.Sc., Ph.D., research groups and academic departments.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link to="/bioinformatics-services" className="btn-secondary px-8 py-3 text-center text-base">View Prices & Order Analysis →</Link>
+              <Link to="/explore" className="btn-secondary px-8 py-3 text-center text-base">Explore Real Compound Data →</Link>
               <Link to="/register" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Create Free Account</Link>
               <Link to="/research-studio" className="btn-outline border-white px-8 py-3 text-center text-base text-white hover:bg-white/10">Research Studio</Link>
             </div>
           </div>
           <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-sm">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-300">Orderable research services</div>
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-300">Research functionality you can explore</div>
             <div className="mt-5 space-y-3">
-              {REVENUE.map(([name, price]) => (
+              {WORKFLOWS.map(([name, detail]) => (
                 <div key={name} className="flex items-center justify-between gap-3 rounded-xl bg-forest-900/35 px-4 py-3">
                   <span className="text-sm font-medium text-white">{name}</span>
-                  <span className="text-sm font-bold text-gold-300">{price}</span>
+                  <span className="max-w-[55%] text-right text-xs text-gold-300">{detail}</span>
                 </div>
               ))}
             </div>
-            <Link to="/bioinformatics-services" className="mt-5 block rounded-xl bg-gold-400 px-4 py-3 text-center text-sm font-bold text-forest-900">Get instant quote</Link>
+            <Link to="/explore" className="mt-5 block rounded-xl bg-gold-400 px-4 py-3 text-center text-sm font-bold text-forest-900">Open public science explorer</Link>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-18">
         <div className="py-16 text-center">
-          <h2 className="text-3xl font-bold text-forest-800 md:text-4xl">One ecosystem, multiple revenue and research pathways</h2>
+          <h2 className="text-3xl font-bold text-forest-800 md:text-4xl">One ecosystem for practical scientific research</h2>
           <p className="mx-auto mt-4 max-w-3xl text-gray-500">Built for researchers, clinicians, clinics, institutions, HMOs and responsible herbal-product innovators.</p>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -87,9 +88,9 @@ export default function Landing() {
       <section className="bg-forest-800 px-6 py-16 text-white">
         <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
           {[
-            ["1", "Order", "Choose a defined bioinformatics package or request a custom project scope."],
-            ["2", "Track", "Follow paid project status, target delivery, progress notes and receipts in your account."],
-            ["3", "Deliver", "Receive reproducible methods, analysis tables, network files and publication-ready figures through secure links."],
+            ["1", "Explore", "Look up public compounds and protein structures with clear source references."],
+            ["2", "Plan", "Choose your methodology and prepare a research brief before requesting any paid service."],
+            ["3", "Export", "Download JSON references or Markdown study briefs for further analysis and review."],
           ].map(([step, title, text]) => (
             <div key={step} className="rounded-2xl border border-forest-600 p-6">
               <div className="text-2xl font-bold text-gold-300">{step}</div>
@@ -101,10 +102,10 @@ export default function Landing() {
       </section>
 
       <section className="px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold text-forest-800 md:text-4xl">Need docking, ADMET or Cytoscape analysis this week?</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-gray-500">Start with a published package or send a custom scope. Local pricing is shown in Naira and international pricing in USD.</p>
+        <h2 className="text-3xl font-bold text-forest-800 md:text-4xl">Begin with verifiable scientific information</h2>
+        <p className="mx-auto mt-4 max-w-2xl text-gray-500">Search a public scientific database, export sourced results, and plan your next research step. Payments are separate from these tools.</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link to="/bioinformatics-services" className="btn-primary inline-block px-10 py-3 text-base">View Bioinformatics Services →</Link>
+          <Link to="/explore" className="btn-primary inline-block px-10 py-3 text-base">Launch Science Explorer →</Link>
           <Link to="/register" className="btn-secondary inline-block px-10 py-3 text-base">Create Researcher Account</Link>
         </div>
       </section>
