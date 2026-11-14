@@ -31,6 +31,17 @@ class CheckLiveCatalogTests(unittest.TestCase):
         self.assertFalse(check(URL)[0])
 
     @patch("scripts.check_live_catalog.urlopen")
+    def test_reference_mode_cannot_pass_live_api_readiness(self, fetch):
+        fetch.return_value = FakeResponse("application/json", json.dumps({
+            "services": [{"id": "one", "tiers": [{"id": "basic"}]}],
+            "catalog_mode": "reference",
+            "checkout_available": False,
+        }).encode())
+        ok, message = check(URL)
+        self.assertFalse(ok)
+        self.assertIn("Read-only reference catalog", message)
+
+    @patch("scripts.check_live_catalog.urlopen")
     def test_bad_json_fails(self, fetch):
         fetch.return_value = FakeResponse("application/json", b'{"status":"ok"}')
         self.assertFalse(check(URL)[0])
