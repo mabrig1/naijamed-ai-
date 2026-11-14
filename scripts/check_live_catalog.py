@@ -56,6 +56,8 @@ def check(url: str) -> tuple[bool, str]:
         return False, "Missing nonempty services array"
     if not all(isinstance(s, dict) and s.get("id") and isinstance(s.get("tiers"), list) and s["tiers"] for s in payload["services"]):
         return False, "Catalog contains invalid service entries"
+    if payload.get("checkout_available") is False or payload.get("catalog_mode") == "reference":
+        return False, "Read-only reference catalog is available, but the full order API is not verified"
     return True, f"Valid JSON catalog: {len(payload['services'])} services"
 
 def main() -> int:
