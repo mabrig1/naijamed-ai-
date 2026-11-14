@@ -30,6 +30,8 @@ jobs:
       - run: node --test cloudflare/tests/worker.test.mjs
       - name: Verify research AI free-only inference and drug-discovery safety
         run: node --test cloudflare/tests/drug-discovery.test.mjs
+      - name: Check private R2 API access controls without any cloud credentials
+        run: node --test cloudflare/tests/research-files.test.mjs
       - name: Verify Cloudflare preview configuration has no production routes or enabled writes
         run: node --test cloudflare/tests/integration-config.test.mjs
       - name: Validate legacy frontend-root read-only API function

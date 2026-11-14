@@ -8,7 +8,9 @@
     "API_PROXY_ENABLED": "false",
     "API_WRITES_ENABLED": "false",
     "CHECKOUT_ENABLED": "false",
-    "RESEARCH_AI_ENABLED": "false"
+    "RESEARCH_AI_ENABLED": "false",
+    "STORAGE_ENABLED": "false",
+    "R2_WRITES_ENABLED": "false"
   },
   "assets": {
     "directory": "../frontend/dist",

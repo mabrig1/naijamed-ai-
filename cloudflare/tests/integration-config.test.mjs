@@ -27,7 +27,19 @@ test("every feature gate starts disabled and no secrets or live URLs are bundled
     API_WRITES_ENABLED: "false",
     CHECKOUT_ENABLED: "false",
     RESEARCH_AI_ENABLED: "false",
+    STORAGE_ENABLED: "false",
+    R2_WRITES_ENABLED: "false",
   });
   assert.ok(!("BACKEND_ORIGIN" in config.vars));
   assert.ok(!("secrets" in config));
+});
+
+test("R2 variant is opt-in and never enables writes or public buckets", () => {
+  const staged = JSON.parse(readFileSync(new URL("../wrangler.r2.preview.jsonc", import.meta.url), "utf8"));
+  assert.deepEqual(staged.r2_buckets, [{ binding: "NIGERFLORA_R2", bucket_name: "nigerflora-storage" }]);
+  assert.equal(staged.vars.STORAGE_ENABLED, "false");
+  assert.equal(staged.vars.R2_WRITES_ENABLED, "false");
+  assert.ok(!("routes" in staged));
+  assert.ok(!("custom_domains" in staged));
+  assert.ok(!("r2_buckets" in config));
 });

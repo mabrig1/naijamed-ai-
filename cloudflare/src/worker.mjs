@@ -1,3 +1,4 @@
+import { handleResearchFiles } from "./research-files.mjs";
 import { handleDrugDiscovery } from "./drug-discovery.mjs";
 import catalogSnapshot from "../../frontend/src/generated/bioinformatics-catalog.json" with { type: "json" };
 
@@ -106,6 +107,9 @@ export default {
     const origin = backendOrigin(env, url.hostname);
     if (url.pathname.startsWith("/api/drug-discovery/")) {
       return handleDrugDiscovery(request, env, origin);
+    }
+    if (url.pathname === "/api/research-files" || url.pathname.startsWith("/api/research-files/")) {
+      return handleResearchFiles(request, env, origin);
     }
     const ordersEnabled = checkoutEnabled(env, origin);
     const writesEnabled = Boolean(origin) && enabled(env.API_WRITES_ENABLED);
