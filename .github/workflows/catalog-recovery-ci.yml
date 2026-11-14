@@ -105,6 +105,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_lightweight_clinical_runtime.py" -v
       - name: Verify Vercel hyphenated URLs match FastAPI routes
         run: python -m unittest discover -s tests -p "test_vercel_api_route_aliases.py" -v
+      - name: Verify Super Admin is never self-assigned and owner endpoints require authorization
+        run: python -m unittest discover -s tests -p "test_super_admin_security.py" -v
       - name: Verify removed heavy SDKs are not runtime dependencies
         run: |
           python - <<'PY'
