@@ -1,0 +1,109 @@
+name: NigerFlora post-merge live service diagnostic
+on:
+  push:
+    branches:
+      - fix/nigerflora-live-api-postmerge-20261114
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-public-api:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compare public route and Vercel Python function route
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error, ssl
+          from urllib.parse import urlparse
+          hosts = [
+              "https://nigerflora.mabrigkorie.org",
+              "https://nigerflora-biosciences.vercel.app",
+          ]
+          paths = ["/api/research-commerce", "/api/research_commerce",
+                   "/api/research-studio", "/api/research_studio",
+                   "/api/cloudflare-status", "/bioinformatics-services"]
+          for host in hosts:
+              for path in paths:
+                  url = host + path
+                  try:
+                      req = urllib.request.Request(url, headers={
+                        "Accept": "application/json" if path.startswith("/api/") else "text/html",
+                        "Cache-Control": "no-cache", "User-Agent": "NigerFlora-ReadOnly-Healthcheck/1.0",
+                      })
+                      with urllib.request.urlopen(req, timeout=15) as res:
+                          status = res.status
+                          content_type = res.headers.get("Content-Type", "")
+                          body = res.read(65536)
+                          final = res.url
+                          server = res.headers.get("server", "")
+                          vercel = bool(res.headers.get("x-vercel-id"))
+                  except urllib.error.HTTPError as ex:
+                      status, content_type = ex.code, ex.headers.get("Content-Type", "")
+                      body = ex.read(4096)
+                      final = ex.url
+                      server = ex.headers.get("server", "")
+                      vercel = bool(ex.headers.get("x-vercel-id"))
+                  except Exception as ex:
+                      print(f"{url} | ERROR={type(ex).__name__}")
+                      continue
+                  kind = "HTML" if b"<html" in body[:500].lower() or b"<!doctype html" in body[:500].lower() else "OTHER"
+                  if "json" in content_type.lower():
+                      try:
+                          o = json.loads(body)
+                          kind = "JSON_SERVICES=" + str(len(o["services"])) if isinstance(o,dict) and isinstance(o.get("services"), list) else "JSON_OTHER"
+                      except Exception:
+                          kind = "BROKEN_JSON"
+                  redirected = final != url
+                  print(f"{url} | HTTP={status} TYPE={content_type.split(';')[0]} BODY={kind} REDIRECTED={redirected} SERVER={server} VERCEL={vercel}")
+          PY
+
+      - name: Test public price quote only — no order, lead, payment, or database mutation
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request, urllib.error
+          payload = json.dumps({
+             "action": "quote",
+             "service_id": "scope-consultation",
+             "tier_id": "standard",
+             "market": "local",
+             "addon_ids": []
+          }).encode("utf-8")
+          for host in ("https://nigerflora.mabrigkorie.org", "https://nigerflora-biosciences.vercel.app"):
+              req = urllib.request.Request(host + "/api/research-commerce", data=payload, method="POST",
+                 headers={"Content-Type":"application/json","Accept":"application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=12) as response:
+                      status = response.status
+                      data = response.read(8192)
+                      ct = response.headers.get("Content-Type","")
+              except urllib.error.HTTPError as e:
+                  status = e.code
+                  data = e.read(8192)
+                  ct = e.headers.get("Content-Type","")
+              except Exception as e:
+                  print(host + " POST quote ERROR=" + type(e).__name__)
+                  continue
+              try:
+                  obj = json.loads(data)
+                  data_kind = "quote" if isinstance(obj,dict) and obj.get("service_id")=="scope-consultation" and obj.get("amount_major")==25000 else ("error:" + str(obj.get("detail","unknown"))[:110])
+              except Exception:
+                  data_kind = "non-JSON"
+              print(f"{host} POST quote HTTP={status} TYPE={ct.split(';')[0]} RESULT={data_kind}")
+          PY
+      - name: Verify the full-service readiness condition separately
+        continue-on-error: true
+        run: |
+          python scripts/check_live_catalog.py \
+            https://nigerflora.mabrigkorie.org/api/research-commerce \
+            https://nigerflora-biosciences.vercel.app/api/research-commerce

@@ -405,8 +405,8 @@ def commerce_catalog():
 @app.post("/api/research-commerce")
 @app.post("/api/research_commerce")
 def commerce_action(body: CommerceAction, request: Request):
-    db = get_db()
-
+    # Price quotes are pure calculations. Never require MongoDB or initialize
+    # database indexes merely to display package pricing to a visitor.
     if body.action == "quote":
         return calculate_quote(body)
 
@@ -429,10 +429,12 @@ def commerce_action(body: CommerceAction, request: Request):
             "created_at": now(),
             "updated_at": now(),
         }
-        db.research_sales_leads.insert_one(lead)
+        get_db().research_sales_leads.insert_one(lead)
         return {"lead_id": lead_id, "message": "Your project request has been recorded. You can also create an account and pay for a defined package immediately."}
 
     user = user_from_request(request)
+    # Authenticated order and admin actions still require the real database.
+    db = get_db()
     user_id = str(user["_id"])
 
     if body.action == "create_order":
