@@ -27,6 +27,42 @@ class RouteAliasTests(unittest.TestCase):
                     self.assertTrue(all(item.get("tiers") for item in body["services"]))
                     self.assertIsInstance(body["addons"], list)
 
+    def test_quote_does_not_depend_on_mongodb_or_database_indexes(self):
+        from unittest.mock import patch
+        payload = {
+            "action": "quote",
+            "service_id": "scope-consultation",
+            "tier_id": "standard",
+            "market": "local",
+            "addon_ids": [],
+        }
+        with patch("api.research_commerce.get_db", side_effect=AssertionError("Do not touch MongoDB for quotes")):
+            with TestClient(commerce_app) as client:
+                for path in ("/api/research-commerce", "/api/research_commerce"):
+                    with self.subTest(path=path):
+                        response = client.post(path, json=payload)
+                        self.assertEqual(response.status_code, 200, response.text)
+                        quote = response.json()
+                        self.assertEqual(quote["service_id"], "scope-consultation")
+                        self.assertEqual(quote["currency"], "NGN")
+                        self.assertEqual(quote["amount_major"], 25000)
+
+    def test_public_quote_validates_invalid_service_without_db(self):
+        from unittest.mock import patch
+        with patch("api.research_commerce.get_db", side_effect=AssertionError("No database connection expected")):
+            response = TestClient(commerce_app).post("/api/research-commerce", json={
+                "action": "quote", "service_id": "not-real", "tier_id": "standard",
+            })
+        self.assertEqual(response.status_code, 404)
+
+    def test_honeypot_request_has_no_database_side_effect(self):
+        from unittest.mock import patch
+        with patch("api.research_commerce.get_db", side_effect=AssertionError("No insert expected")):
+            response = TestClient(commerce_app).post("/api/research-commerce", json={
+                "action": "capture_lead", "website": "spam.invalid",
+            })
+        self.assertEqual(response.status_code, 200)
+
     def test_studio_catalog_on_both_url_spellings(self):
         with TestClient(studio_app) as client:
             for path in ("/api/research-studio", "/api/research_studio"):
