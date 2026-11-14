@@ -306,9 +306,12 @@ def owner_change_user(
         updates["role"] = change.role
     if change.is_active is not None:
         updates["is_active"] = change.is_active
-    db.users.update_one({"_id": target_id, "role": {"$ne": "super_admin"}}, {
-        "$set": updates, "$inc": {"token_version": 1}
-    })
+    change_result = db.users.update_one(
+        {"_id": target_id, "role": {"$ne": "super_admin"}},
+        {"$set": updates, "$inc": {"token_version": 1}},
+    )
+    if change_result.matched_count != 1:
+        raise HTTPException(status_code=409, detail="Account changed during update; retry")
     db.admin_audit_logs.insert_one({
         "actor_id": str(actor["_id"]),
         "target_id": user_id,
@@ -659,7 +662,7 @@ def verify_consultation(reference: str, user: dict[str, Any] = Depends(current_u
     db = get_db()
     user_id = str(user["_id"])
     consultation = db.clinical_consultations.find_one({"payment_reference": reference})
-    if not consultation or (user_id not in {consultation.get("patient_id"), consultation.get("provider_id")} and user.get("role") != "admin"):
+    if not consultation or (user_id not in {consultation.get("patient_id"), consultation.get("provider_id")} and user.get("role") not in {"admin", "super_admin"}):
         raise HTTPException(status_code=404, detail="Consultation not found")
     data = (_paystack_get(f"/transaction/verify/{reference}").get("data") or {})
     paid = data.get("status") == "success" and int(data.get("amount") or 0) == int(consultation["amount_kobo"])
