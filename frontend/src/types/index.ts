@@ -1,6 +1,6 @@
 // ── Auth ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "farmer" | "researcher" | "pharma_company" | "admin";
+export type UserRole = "farmer" | "researcher" | "pharma_company" | "patient" | "doctor" | "clinic" | "hmo" | "admin" | "super_admin";
 
 export interface User {
   id: number;

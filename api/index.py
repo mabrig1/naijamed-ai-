@@ -54,7 +54,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 # ----------------------------- schemas --------------------------------------
 
-Role = Literal["patient", "doctor", "clinic", "hmo", "admin"]
+Role = Literal["patient", "doctor", "clinic", "hmo"]
 
 
 class RegisterRequest(BaseModel):
@@ -164,8 +164,16 @@ def current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
 
 
 def admin_user(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
-    if user.get("role") != "admin":
+    if user.get("role") not in {"admin", "super_admin"}:
         raise HTTPException(status_code=403, detail="Administrator access required")
+    return user
+
+
+def super_admin_user(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
+    # Owner powers come from a verified database role, never a client flag,
+    # registration email or an environment allowlist alone.
+    if user.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Super Admin access required")
     return user
 
 
@@ -173,11 +181,9 @@ def admin_user(user: dict[str, Any] = Depends(current_user)) -> dict[str, Any]:
 def register(body: RegisterRequest):
     db = get_db()
     email = body.email.lower().strip()
-    allowed_self_roles = {"patient", "doctor", "clinic", "hmo"}
-    role: str = body.role if body.role in allowed_self_roles else "patient"
-    admin_emails = {e.strip().lower() for e in settings.ADMIN_EMAILS.split(",") if e.strip()}
-    if email in admin_emails:
-        role = "admin"
+    # Email ownership is not verified at registration. Never allow a new
+    # account to obtain admin privileges merely by typing a trusted email.
+    role: str = body.role
     user = {
         "email": email,
         "full_name": body.full_name.strip(),
@@ -213,6 +219,109 @@ def me(user: dict[str, Any] = Depends(current_user)):
 @app.post("/api/auth/logout", status_code=204)
 def logout(user: dict[str, Any] = Depends(current_user)):
     get_db().users.update_one({"_id": user["_id"]}, {"$inc": {"token_version": 1}})
+
+
+# ------------------------- Super Admin operations ----------------------------
+
+OWNER_MODULES = [
+    {"path": "/dashboard", "name": "Main dashboard"},
+    {"path": "/discovery", "name": "Discovery Workbench"},
+    {"path": "/research-studio", "name": "Research Studio"},
+    {"path": "/research", "name": "Research evidence"},
+    {"path": "/herbs", "name": "Herb research data"},
+    {"path": "/formulations", "name": "Formulation workspace"},
+    {"path": "/compliance", "name": "Compliance workspace"},
+    {"path": "/farming", "name": "Marketplace"},
+    {"path": "/export", "name": "Export Hub"},
+    {"path": "/prices", "name": "Price Intelligence"},
+    {"path": "/research-commerce/admin", "name": "Research fulfillment (payments deferred)"},
+]
+
+
+def _owner_public_user(user: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": str(user["_id"]),
+        "email": user["email"],
+        "full_name": user.get("full_name", ""),
+        "role": user.get("role", ""),
+        "is_active": bool(user.get("is_active", True)),
+    }
+
+
+class OwnerUserChange(BaseModel):
+    role: Literal["patient", "doctor", "clinic", "hmo", "researcher", "farmer",
+                  "pharma_company", "admin"] | None = None
+    is_active: bool | None = None
+
+
+@app.get("/api/owner/overview")
+def owner_overview(_: dict[str, Any] = Depends(super_admin_user)):
+    db = get_db()
+    return {
+        "role": "super_admin",
+        "modules": OWNER_MODULES,
+        "users_total": db.users.count_documents({}),
+        "users_active": db.users.count_documents({"is_active": {"$ne": False}}),
+        "discovery_assets": db.discovery_assets.count_documents({}),
+        "research_projects": db.polyherbal_synergy_projects.count_documents({}),
+        "service_orders": db.research_commerce_orders.count_documents({}),
+        "payments_enabled_by_console": False,
+        "note": "Account operations are audited. Research and clinical records retain their own authorization rules.",
+    }
+
+
+@app.get("/api/owner/users")
+def owner_users(limit: int = 100, _: dict[str, Any] = Depends(super_admin_user)):
+    if not 1 <= limit <= 200:
+        raise HTTPException(status_code=422, detail="limit must be 1–200")
+    users = get_db().users.find(
+        {}, {"email": 1, "full_name": 1, "role": 1, "is_active": 1}
+    ).sort("created_at", -1).limit(limit)
+    return {"users": [_owner_public_user(user) for user in users]}
+
+
+@app.patch("/api/owner/users/{user_id}")
+def owner_change_user(
+    user_id: str,
+    change: OwnerUserChange,
+    actor: dict[str, Any] = Depends(super_admin_user),
+):
+    try:
+        target_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=422, detail="Invalid user identifier")
+    if target_id == actor["_id"]:
+        raise HTTPException(status_code=403, detail="Cannot change your own owner account")
+    if change.role is None and change.is_active is None:
+        raise HTTPException(status_code=422, detail="Provide a role or account status")
+
+    db = get_db()
+    previous = db.users.find_one({"_id": target_id})
+    if not previous:
+        raise HTTPException(status_code=404, detail="User not found")
+    if previous.get("role") == "super_admin":
+        raise HTTPException(status_code=403, detail="Cannot modify another owner from the console")
+    updates: dict[str, Any] = {}
+    if change.role is not None:
+        updates["role"] = change.role
+    if change.is_active is not None:
+        updates["is_active"] = change.is_active
+    change_result = db.users.update_one(
+        {"_id": target_id, "role": {"$ne": "super_admin"}},
+        {"$set": updates, "$inc": {"token_version": 1}},
+    )
+    if change_result.matched_count != 1:
+        raise HTTPException(status_code=409, detail="Account changed during update; retry")
+    db.admin_audit_logs.insert_one({
+        "actor_id": str(actor["_id"]),
+        "target_id": user_id,
+        "action": "owner.user_update",
+        "before": {"role": previous.get("role"), "is_active": previous.get("is_active", True)},
+        "after": updates,
+        "created_at": _now(),
+    })
+    current = db.users.find_one({"_id": target_id})
+    return {"user": _owner_public_user(current), "sessions_revoked": True}
 
 
 # -------------------------- clinical workflow -------------------------------
@@ -315,7 +424,7 @@ def get_case(case_id: str, user: dict[str, Any] = Depends(current_user)):
     if not case:
         raise HTTPException(status_code=404, detail="Clinical case not found")
     user_id = str(user["_id"])
-    provider_view = user.get("role") == "admin" or (case.get("assigned_doctor_id") == user_id and bool(_verified_provider(user_id)))
+    provider_view = user.get("role") in {"admin", "super_admin"} or (case.get("assigned_doctor_id") == user_id and bool(_verified_provider(user_id)))
     if case.get("patient_id") != user_id and not provider_view:
         raise HTTPException(status_code=403, detail="Clinical record access denied")
     payload = decrypt_json(case["encrypted_payload"])
@@ -347,7 +456,7 @@ def get_case(case_id: str, user: dict[str, Any] = Depends(current_user)):
 
 @app.post("/api/clinical/providers/profile", status_code=201)
 def provider_profile(body: ProviderProfileRequest, user: dict[str, Any] = Depends(current_user)):
-    if user.get("role") not in {"doctor", "clinic", "admin"}:
+    if user.get("role") not in {"doctor", "clinic", "admin", "super_admin"}:
         raise HTTPException(status_code=403, detail="Doctor or clinic account required")
     doc = {
         "user_id": str(user["_id"]),
@@ -397,7 +506,7 @@ def assign_provider(case_id: str, provider_user_id: str, user: dict[str, Any] = 
     if not case:
         raise HTTPException(status_code=404, detail="Clinical case not found")
     user_id = str(user["_id"])
-    if case.get("patient_id") != user_id and user.get("role") != "admin":
+    if case.get("patient_id") != user_id and user.get("role") not in {"admin", "super_admin"}:
         raise HTTPException(status_code=403, detail="Only the patient or an administrator can assign a clinician")
     if not _verified_provider(provider_user_id):
         raise HTTPException(status_code=409, detail="Provider is not verified")
@@ -553,7 +662,7 @@ def verify_consultation(reference: str, user: dict[str, Any] = Depends(current_u
     db = get_db()
     user_id = str(user["_id"])
     consultation = db.clinical_consultations.find_one({"payment_reference": reference})
-    if not consultation or (user_id not in {consultation.get("patient_id"), consultation.get("provider_id")} and user.get("role") != "admin"):
+    if not consultation or (user_id not in {consultation.get("patient_id"), consultation.get("provider_id")} and user.get("role") not in {"admin", "super_admin"}):
         raise HTTPException(status_code=404, detail="Consultation not found")
     data = (_paystack_get(f"/transaction/verify/{reference}").get("data") or {})
     paid = data.get("status") == "success" and int(data.get("amount") or 0) == int(consultation["amount_kobo"])

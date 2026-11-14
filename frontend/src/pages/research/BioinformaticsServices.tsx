@@ -316,7 +316,7 @@ export default function BioinformaticsServices() {
             {isAuthenticated ? (
               <>
                 <Link className="rounded-lg border border-forest-600 px-3 py-2 hover:bg-forest-800" to="/dashboard">Dashboard</Link>
-                {String(user?.role) === "admin" && <Link className="rounded-lg bg-gold-400 px-3 py-2 font-semibold text-forest-900" to="/research-commerce/admin">Admin orders</Link>}
+                {["admin", "super_admin"].includes(String(user?.role)) && <Link className="rounded-lg bg-gold-400 px-3 py-2 font-semibold text-forest-900" to="/research-commerce/admin">Admin orders</Link>}
               </>
             ) : (
               <>

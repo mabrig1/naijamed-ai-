@@ -9,6 +9,22 @@
   },
   "rewrites": [
     {
+      "source": "/api/health",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/clinical/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/owner/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/auth/:path*",
+      "destination": "/api/index"
+    },
+    {
       "source": "/api/research-studio",
       "destination": "/api/research_studio"
     },
