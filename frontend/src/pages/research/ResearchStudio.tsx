@@ -8,8 +8,6 @@ interface ResearchService {
   category: string;
   name: string;
   description: string;
-  price_kobo: number;
-  price_label: string;
   deliverables: string[];
 }
 
@@ -200,7 +198,7 @@ export default function ResearchStudio() {
                       {service.deliverables.slice(0, 4).map((item) => <li key={item}>✓ {item}</li>)}
                     </ul>
                     <div className="mt-6 flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                      <span className="font-bold text-forest-700">{service.price_label}</span>
+                      <span className="text-xs font-medium text-forest-700">Testing and research planning</span>
                       <button className="btn-primary" onClick={() => { setBriefMessage(""); setSelected(service); }}>Prepare brief</button>
                     </div>
                   </article>
@@ -280,7 +278,7 @@ export default function ResearchStudio() {
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wide text-forest-500">Research planning brief</div>
                 <h3 className="mt-1 text-2xl font-bold text-gray-900">{selected.name}</h3>
-                <div className="mt-1 font-semibold text-forest-700">{selected.price_label}</div>
+                <div className="mt-1 text-sm font-semibold text-forest-700">Research planning only · No payment</div>
               </div>
               <button className="text-2xl text-gray-400 hover:text-gray-700" onClick={() => setSelected(null)}>×</button>
             </div>

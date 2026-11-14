@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     # Allowlist for manual owner bootstrap only; registration never grants admin.
     ADMIN_EMAILS: str = ""
+    # Testing phase: no public or researcher-initiated checkout/order creation.
+    # To restore commerce later, complete a separate security and payment review.
+    RESEARCH_CHECKOUT_ENABLED: bool = False
 
     # MongoDB Atlas — production data store for Vercel.
     MONGODB_URI: str = ""

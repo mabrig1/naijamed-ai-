@@ -1,61 +1,85 @@
-// Offline-first browser smoke test for the public NigerFlora services page.
-// Run with: cd frontend && node tests/catalog-browser-smoke.mjs
-// Requires a running Vite preview at http://127.0.0.1:4173.
+// Verifies a production-like React build for functionality-first service testing.
+// Run from frontend with Vite preview on http://127.0.0.1:4173.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const snapshot = JSON.parse(await readFile(new URL("../src/generated/bioinformatics-catalog.json", import.meta.url), "utf8"));
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-const page = await browser.newPage();
+const page = await browser.newPage({ acceptDownloads: true });
 const root = process.env.PREVIEW_BASE_URL || "http://127.0.0.1:4173";
-const api = "**/api/research-commerce";
 let mode = "offline";
+let writes = 0;
 
 try {
-  await page.route(api, async (route) => {
+  await page.route("**/api/research-commerce", async route => {
     if (route.request().method() !== "GET") {
-      return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Not available" }) });
+      writes += 1;
+      return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Checkout disabled" }) });
     }
-    if (mode === "offline") {
-      // Simulates the confirmed current production failure: HTTP 200 + HTML.
-      return route.fulfill({ status: 200, contentType: "text/html", body: "<html>SPA fallback</html>" });
-    }
-    if (mode === "bad-json") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ healthy: true }) });
-    }
+    if (mode === "offline") return route.fulfill({ status: 200, contentType: "text/html", body: "<html>SPA fallback</html>" });
+    if (mode === "bad-json") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ healthy: true }) });
     return route.fulfill({
-      status: 200,
-      contentType: "application/json",
+      status: 200, contentType: "application/json",
       body: JSON.stringify({ ...snapshot, catalog_mode: "live", checkout_available: true }),
     });
   });
+  await page.route("**/api/discovery", async route => {
+    const data = route.request().postDataJSON();
+    if (data.action !== "lookup_compound" && data.action !== "lookup_protein") {
+      writes += 1;
+      return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ detail: "Authentication required" }) });
+    }
+    const asset = data.action === "lookup_compound"
+      ? { kind: "compound", name: "Aspirin", external_id: "2244", molecular_formula: "C9H8O4", source: "PubChem", source_url: "https://pubchem.ncbi.nlm.nih.gov/compound/2244" }
+      : { kind: "protein", name: "Crambin", external_id: "1CRN", source: "RCSB Protein Data Bank", source_url: "https://www.rcsb.org/structure/1CRN" };
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: asset, scientific_notice: "Research reference" }) });
+  });
 
   await page.goto(root + "/bioinformatics-services", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Retry connection" }).waitFor({ state: "visible" });
-  await page.getByText("Live ordering is currently unavailable.", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
-  const offline = page.getByRole("button", { name: "Ordering temporarily unavailable" });
-  assert.equal(await offline.count(), snapshot.services.length, "All seven packages must be visible without API JSON");
-  for (const button of await offline.all()) {
-    assert.equal(await button.isDisabled(), true, "No payment action in fallback mode");
-  }
-  assert.equal(await page.getByRole("heading", { name: snapshot.services[0].name }).count(), 1);
-  console.log("PASS: HTML 200 fallback shows services with payment actions disabled");
+  await page.getByText("Reference catalog loaded;", { exact: false }).waitFor({ state: "visible" });
+  const buttons = page.getByRole("button", { name: "Test this workflow" });
+  assert.equal(await buttons.count(), snapshot.services.length, "Every service must offer a public test button");
+  for (const button of await buttons.all()) assert.equal(await button.isEnabled(), true, "Testing never depends on checkout status");
+  const text = await page.locator("body").innerText();
+  assert.ok(!/₦|(?:\$\s*\d)|Paystack|Flutterwave|Ordering temporarily unavailable|Get instant quote/i.test(text), "No money or checkout language on public services");
+  console.log("PASS: API returns HTML, but all seven test workflows remain accessible with no pricing");
+
+  await buttons.first().click();
+  await page.getByRole("button", { name: "Download test research brief" }).waitFor();
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download test research brief" }).click();
+  const file = await downloadPromise;
+  assert.ok(file.suggestedFilename().endsWith("-test-brief.md"));
+  console.log("PASS: research brief downloads without login, order, price or payment");
 
   mode = "bad-json";
-  await page.getByRole("button", { name: "Retry connection" }).click();
-  await page.getByText("Live ordering is currently unavailable.", { exact: false }).waitFor({ state: "visible" });
-  assert.equal(await page.getByRole("button", { name: "Ordering temporarily unavailable" }).count(), snapshot.services.length);
-  console.log("PASS: malformed JSON cannot enable checkout");
+  await page.getByRole("button", { name: "Check API again" }).click();
+  await page.getByText("Reference catalog loaded;", { exact: false }).waitFor();
+  assert.equal(await page.getByRole("button", { name: "Test this workflow" }).count(), snapshot.services.length);
 
   mode = "live";
-  await page.getByRole("button", { name: "Retry connection" }).click();
-  const enabled = page.getByRole("button", { name: "Get instant quote / order" });
-  await enabled.first().waitFor({ state: "visible" });
-  assert.equal(await enabled.count(), snapshot.services.length);
-  assert.equal(await enabled.first().isEnabled(), true);
-  assert.equal(await page.getByText("Live ordering is currently unavailable.", { exact: false }).count(), 0);
-  console.log("PASS: valid live catalog clears error and enables order buttons");
+  await page.getByRole("button", { name: "Check API again" }).click();
+  await page.getByText("Live service metadata connected.", { exact: false }).waitFor();
+  assert.equal(await page.getByRole("button", { name: "Test this workflow" }).count(), snapshot.services.length);
+  console.log("PASS: valid catalog metadata changes status only, never enables checkout");
+
+  // Each service must open an interactive, export-capable workspace.
+  for (let i = 0; i < snapshot.services.length; i += 1) {
+    await page.getByRole("button", { name: "Test this workflow" }).nth(i).click();
+    const workspace = page.getByRole("region", { name: "Service testing workspace" });
+    await workspace.waitFor({ state: "visible" });
+    assert.equal(await workspace.getByRole("heading", { name: snapshot.services[i].name }).count(), 1);
+    assert.equal(await workspace.getByRole("button", { name: "Download test research brief" }).isEnabled(), true);
+  }
+  console.log("PASS: all seven service workspaces open and permit brief exports");
+
+  await page.getByRole("button", { name: "Test this workflow" }).nth(1).click();
+  await page.getByRole("button", { name: "Test compound lookup" }).click();
+  await page.getByText("PubChem identity lookup completed.").waitFor();
+  await page.getByText("Aspirin · CID 2244").waitFor();
+  assert.equal(writes, 0, "No lead, account, order or payment endpoint should be called");
+  console.log("PASS: public ADMET test retrieves real-shaped scientific references and never creates orders");
 } finally {
   await browser.close();
 }

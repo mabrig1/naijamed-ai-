@@ -111,6 +111,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_owner_vercel_routing.py" -v
       - name: Verify public scientific lookups are read-only and private actions require authentication
         run: python -m unittest discover -s tests -p "test_discovery_public_lookup.py" -v
+      - name: Verify research checkout cannot be activated during testing
+        run: python -m unittest discover -s tests -p "test_research_checkout_disabled.py" -v
       - name: Verify removed heavy SDKs are not runtime dependencies
         run: |
           python - <<'PY'
