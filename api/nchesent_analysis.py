@@ -9,9 +9,20 @@ import math
 from typing import Literal
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 app = FastAPI(title="MABRIG PharmaOS Synthetic Malaria Research Compute", version="1.0.0")
+# Allow the teaching dashboard to compare its fictional cohort if its Worker is unavailable.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://nchesent.mabrigkorie.org"],
+    allow_methods=["POST"],
+    allow_headers=["Content-Type", "Accept"],
+    allow_credentials=False,
+    max_age=600,
+)
+
 VISIT_DAYS = (0, 1, 2, 3, 7, 14, 21, 28, 42)
 NOTICE = (
     "Fictional aggregate arithmetic only. This is NOT a clinical prediction, "
