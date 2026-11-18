@@ -97,6 +97,7 @@ export default function ScienceExplorer() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <Link className="font-bold text-gold-300" to="/">🌿 NigerFlora BioSciences</Link>
           <div className="flex items-center gap-4 text-sm">
+            <a href="/assets/solubility-lab.html" className="hover:underline">Run solubility model</a>
             <Link to="/bioinformatics-services" className="hover:underline">Research services</Link>
             <Link to="/login" className="hover:underline">Researcher login</Link>
           </div>
