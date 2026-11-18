@@ -29,6 +29,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/pharmaos-network" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">PharmaOS Network</Link>
           <Link to="/explore" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Science Explorer</Link>
           <Link to="/bioinformatics-services" className="hidden rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600 sm:block">Services</Link>
           <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-forest-100 hover:bg-forest-600">Sign In</Link>
