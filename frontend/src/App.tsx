@@ -84,6 +84,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/bioinformatics-services" element={<BioinformaticsServices />} />
+        <Route path="/pharmaos-network" element={<PharmaOSNetwork />} />
         <Route path="/explore" element={<ScienceExplorer />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
