@@ -11,6 +11,7 @@ const Login                     = lazy(() => import("./pages/Auth/Login"));
 const Register                  = lazy(() => import("./pages/Auth/Register"));
 const Dashboard                 = lazy(() => import("./pages/Dashboard"));
 const ResearchStudio            = lazy(() => import("./pages/research/ResearchStudio"));
+const PharmaOSNetwork           = lazy(() => import("./pages/research/PharmaOSNetwork"));
 const BioinformaticsServices    = lazy(() => import("./pages/research/BioinformaticsServices"));
 const ResearchCommerceAdmin     = lazy(() => import("./pages/research/ResearchCommerceAdmin"));
 const OwnerConsole             = lazy(() => import("./pages/admin/OwnerConsole"));
@@ -83,6 +84,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/bioinformatics-services" element={<BioinformaticsServices />} />
+        <Route path="/pharmaos-network" element={<PharmaOSNetwork />} />
         <Route path="/explore" element={<ScienceExplorer />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
