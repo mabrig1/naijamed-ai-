@@ -73,6 +73,21 @@ export default function PharmaOSNetwork() {
       </div>
     </section>
     <div className="mx-auto max-w-6xl space-y-6 px-5 py-8">
+      <section className="rounded-2xl border border-forest-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-widest text-forest-700">Existing computational demonstration</p>
+        <h2 className="mt-2 text-2xl font-bold">1,128-compound solubility benchmark</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Run the existing molecular-property model and inspect its cross-validated predictions
+          against published measured water-solubility values. The results include successes and
+          substantial prediction errors. Solubility modelling does not prove therapeutic efficacy.
+        </p>
+        <a href="/assets/solubility-lab.html?v=1f05cdd"
+          className="mt-4 inline-block rounded-xl bg-forest-700 px-5 py-3 font-bold text-white">
+          Launch real solubility benchmark
+        </a>
+        <p className="mt-3 text-xs text-gray-500">Existing, separate calculation; the NcheSent paper-import workflow does not yet retrain or call this model.</p>
+      </section>
+
       <section className="rounded-2xl bg-white p-6 shadow-sm">
         <h2 className="text-2xl font-bold">1. Import PharmaOS report</h2>
         <p className="my-2 text-sm text-gray-600">Use the JSON exported by NcheSent's PharmaOS Studio. No personal or clinical data is accepted.</p>
